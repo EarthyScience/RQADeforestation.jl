@@ -7,6 +7,10 @@
 
 This is the Julia package developed within the [FAIRSenDD project](https://github.com/EarthyScience/FAIRSenDD).
 
+## Citation
+
+F. Cremer, M. Urbazaev, J. Cortés, J. Truckenbrodt, C. Schmullius and C. Thiel, "Potential of Recurrence Metrics from Sentinel-1 Time Series for Deforestation Mapping," in IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing, vol. 13, pp. 5233-5240, 2020, doi: [10.1109/JSTARS.2020.3019333](https://dx.doi.org/10.1109/JSTARS.2020.3019333).
+
 ## Funding
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/8/80/ESA_logo.svg" align="left" height="50" />
