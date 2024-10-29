@@ -4,7 +4,7 @@ CurrentModule = RQADeforestation
 
 # RQADeforestation
 
-Documentation for [RQADeforestation](https://github.com/danlooo/RQADeforestation.jl).
+Documentation for [RQADeforestation](https://github.com/EarthyScience/RQADeforestation.jl).
 
 ```@index
 ```

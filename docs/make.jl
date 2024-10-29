@@ -18,6 +18,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/danlooo/RQADeforestation.jl",
+    repo="github.com/EarthyScience/RQADeforestation.jl",
     devbranch="main",
 )
