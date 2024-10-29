@@ -1,0 +1,52 @@
+name = "RQADeforestation"
+uuid = "3f1d9318-18cc-4ffd-9937-04025ce33b74"
+authors = ["Felix Cremer <felix.cremer@bgc-jena.mpg.de>, Daniel Loos <dloos@bgc-jena.mpg.de> and contributors"]
+version = "1.0.0-DEV"
+
+[deps]
+ArchGDAL = "c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3"
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
+DiskArrayEngine = "2d4b2e14-ccd6-4284-b8b0-2378ace7c126"
+DiskArrayTools = "fcd2136c-9f69-4db6-97e5-f31981721d63"
+DiskArrays = "3c3547ce-8d99-4f5e-a174-61eb10b00ae3"
+Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Extents = "411431e0-e8b7-467b-b5e0-f676ba4f2910"
+FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
+GDAL = "add2ef01-049f-52c4-9ee2-e494f65e021a"
+GeoFormatTypes = "68eda718-8dee-11e9-39e7-89f7f65f511f"
+Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
+KML = "1284bf3a-1e3d-4f4e-a7a9-b9d235a28f35"
+LoggingExtras = "e6f89c97-d47a-5376-807f-9c37f3926c36"
+Missings = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
+NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
+Proj = "c94c279d-25a6-4763-9509-64d165bea63e"
+Rasters = "a3a2b9e3-a471-40c9-b274-f788e487c689"
+RecurrenceAnalysis = "639c3291-70d9-5ea2-8c5b-839eba1ee399"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+TimeseriesSurrogates = "c804724b-8c18-5caa-8579-6025a0767c70"
+UnicodePlots = "b8865327-cd53-5732-bb35-84acbb429228"
+YAXArrayBase = "90b8fcef-0c2d-428d-9c56-5f86629e9d14"
+YAXArrays = "c21b50f5-aa40-41ea-b809-c0f5e47bfa5c"
+Zarr = "0a941bbe-ad1d-11e8-39d9-ab76183a1d99"
+
+[compat]
+julia = "1.10"
+YAXArrayBase = "=0.6"
+Glob = "1"
+NetCDF="0.12"
+Zarr = "0.9"
+ArchGDAL = "0.10"
+YAXArrays = "0.5"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
