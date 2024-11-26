@@ -26,7 +26,7 @@ jobs:
           - "1"
           - "lts"
         os:
-          - ubuntu-latest
+          - self-hosted
         arch:
           - x64
     steps:
