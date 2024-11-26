@@ -26,9 +26,11 @@ jobs:
           - "1"
           - "lts"
         os:
-          - ubuntu-latest
+          - self-hosted
         arch:
           - x64
+    env:
+      JULIA_NUM_THREADS: auto
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2

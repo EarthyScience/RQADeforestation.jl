@@ -5,7 +5,9 @@ on:
   workflow_dispatch:
 jobs:
   CompatHelper:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ubuntu-latest]
+    env:
+      JULIA_NUM_THREADS: auto
     steps:
       - name: Pkg.add("CompatHelper")
         run: julia -e 'using Pkg; Pkg.add("CompatHelper")'
