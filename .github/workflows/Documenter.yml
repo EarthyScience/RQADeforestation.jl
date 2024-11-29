@@ -42,8 +42,13 @@ jobs:
       - name: Install documentation dependencies
         run: sudo apt-get update && sudo apt-get install -y xorg-dev mesa-utils xvfb libgl1 freeglut3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libcairo2-dev libfreetype6-dev libffi-dev libjpeg-dev libpng-dev libz-dev
       - name: Install custom documentation dependencies
-        run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --threads auto --project=docs -e 'using Pkg; pkg"dev ."; Pkg.instantiate(); Pkg.precompile(); Pkg.status()'
-      #- name: Creating new mds from src
+        run: |
+          DISPLAY=:0 xvfb-run \
+            --error-file /dev/stdout \
+            --auto-servernum \
+            --server-args '-screen 0 1024x768x24' julia \
+              --threads auto --project=docs/ --color=yes \
+              -e 'using Pkg; pkg"dev ."; Pkg.instantiate(); Pkg.precompile(); Pkg.status()'
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
@@ -52,4 +57,8 @@ jobs:
           JULIA_DEBUG: "Documenter"
           DATADEPS_ALWAYS_ACCEPT: true
         run: |
-          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --threads auto --project=docs/ --color=yes docs/make.jl
+          DISPLAY=:0 xvfb-run \
+            --error-file /dev/stdout \
+            --auto-servernum \
+            --server-args '-screen 0 1024x768x24' julia \
+              --threads auto --project=docs/ --color=yes docs/make.jl
