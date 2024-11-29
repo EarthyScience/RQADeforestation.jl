@@ -27,8 +27,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Build job
-  build:
+  documentation:
     runs-on: self-hosted
     env:
       JULIA_NUM_THREADS: auto
