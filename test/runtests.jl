@@ -3,6 +3,12 @@ using Test
 import AllocCheck
 import Random
 import Pkg: Artifacts.@artifact_str, ensure_artifact_installed
+using DimensionalData
+using YAXArrays
+using Dates
+using Random
+using Statistics
+
 Random.seed!(1234)
 
 ensure_artifact_installed("rqatestdata", "Artifacts.toml")
@@ -22,12 +28,25 @@ end
     @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Float64}}))
 
 
-    y2 = similar(y, Union{Float64, Missing})
+    y2 = similar(y, Union{Float64,Missing})
     copy!(y2, y)
-    y2[[1,4,10,20,33,65]] .= missing
+    y2[[1, 4, 10, 20, 33, 65]] .= missing
 
 
     @test isapprox(RQADeforestation.rqatrend_impl(y2; thresh=0.5), -0.11069045524336744)
     @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Union{Float64,Missing}}}))
 
+
+    mock_axes = (
+        Ti(Date("2022-01-01"):Day(1):Date("2022-01-30")),
+        X(range(1, 10, length=10)),
+        Y(range(1, 5, length=15)),
+    )
+    mock_data = rand(30, 10, 15)
+    mock_props = Dict()
+    mock_cube = YAXArray(mock_axes, mock_data, mock_props)
+
+    mock_trend = rqatrend(mock_cube; thresh=0.5)
+    @test mock_trend.axes == (mock_cube.X, mock_cube.Y)
+    @test abs(mean(mock_trend)) < 0.1
 end
