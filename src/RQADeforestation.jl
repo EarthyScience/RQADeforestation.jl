@@ -9,6 +9,7 @@ using Distributed: myid
 using NetCDF
 
 export gdalcube
+export rqatrend
 
 include("auxil.jl")
 include("analysis.jl")
