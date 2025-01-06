@@ -63,6 +63,7 @@ Rasters = "0.12"
 Distributions = "0.25"
 GDAL = "1"
 TimeseriesSurrogates = "2"
+KML = "0.2"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
