@@ -57,6 +57,7 @@ RecurrenceAnalysis = "2"
 UnicodePlots = "3"
 DiskArrayTools = "0.1"
 CairoMakie = "0.12"
+LoggingExtras = "1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
