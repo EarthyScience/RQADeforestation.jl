@@ -46,6 +46,7 @@ StatsBase = "0.34"
 YAXArrayBase = "=0.6"
 YAXArrays = "0.5"
 Zarr = "0.9"
+DimensionalData = "0.28"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
