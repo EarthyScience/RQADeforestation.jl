@@ -60,6 +60,7 @@ LoggingExtras = "1"
 Proj = "1"
 GeoFormatTypes = "0.4"
 Rasters = "0.12"
+Distributions = "0.25"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
