@@ -38,15 +38,13 @@ Zarr = "0a941bbe-ad1d-11e8-39d9-ab76183a1d99"
 
 [compat]
 ArchGDAL = "0.10"
-DiskArrayEngine = "0.1"
+DiskArrays = "0.4"
 Glob = "1"
-julia = "1.10"
 NetCDF = "0.12"
-StatsBase = "0.34"
 YAXArrayBase = "=0.6"
 YAXArrays = "0.5"
 Zarr = "0.9"
-DimensionalData = "0.28"
+julia = "1.10"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
