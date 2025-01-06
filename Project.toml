@@ -54,6 +54,7 @@ ConstructionBase = "1"
 YAXArrayBase = "=0.6, 0.7"
 FillArrays = "1"
 RecurrenceAnalysis = "2"
+UnicodePlots = "3"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
