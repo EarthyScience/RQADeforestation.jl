@@ -38,7 +38,7 @@ Zarr = "0a941bbe-ad1d-11e8-39d9-ab76183a1d99"
 
 [compat]
 julia = "1.10"
-YAXArrayBase = "=0.6"
+YAXArrayBase = "0.6, 0.7"
 Glob = "1"
 NetCDF="0.12"
 Zarr = "0.9"
