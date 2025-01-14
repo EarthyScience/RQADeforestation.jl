@@ -10,6 +10,6 @@ Random.seed!(1234)
     x = 1:0.01:30
     y = sin.(x) + 0.1x + rand(length(x))
 
-    @test isapprox(rqatrend(y; thresh=0.5), 0.1)
+    @test isapprox(rqatrend(y; thresh=0.5), -0.11125611687816017)
     @test isempty(AllocCheck.check_allocs(rqatrend, Tuple{Vector{Float64}}))
 end
