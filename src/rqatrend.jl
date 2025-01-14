@@ -32,7 +32,7 @@ end
 
 
 function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=Euclidean())
-    # simplified implementation of https://stats.stackexchange.com/a/370175
+    # simplified implementation of https://stats.stackexchange.com/a/370175 and https://github.com/joshday/OnlineStats.jl/blob/b89a99679b13e3047ff9c93a03c303c357931832/src/stats/linreg.jl
     # x is the diagonal offset, y the percentage of local recurrence
     # we compute the slope of a simple linear regression with bias from x to y
     xs = 1+theiler : length(data)-border
