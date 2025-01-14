@@ -26,21 +26,12 @@ Compute the RQA trend metric for the non-missing time steps of xin, and save it 
 `thresh` specifies the epsilon threshold of the Recurrence Plot computation
 """
 function rqatrend(pix_trend, pix, thresh=2)
-    #replace!(pix, -9999 => missing)
     ts = collect(skipmissing(pix))
-    #@show length(ts)
-    tau_pix = tau_rr(ts, thresh)
-    pix_trend .= RA._trend(tau_pix)
+    pix_trend .= rqatrend_impl(ts; thresh)
 end
 
 
-function rqatrend(pix_trend, pix, thresh=2)
-    ts = collect(skipmissing(pix))
-    pix_trend .= rqatrend(ts; thresh)
-end
-
-
-function rqatrend(data; thresh=2, border=10, theiler=1, metric=Euclidean())
+function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=Euclidean())
     # simplified implementation of https://stats.stackexchange.com/a/370175
     # x is the diagonal offset, y the percentage of local recurrence
     # we compute the slope of a simple linear regression with bias from x to y
