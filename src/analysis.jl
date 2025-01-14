@@ -1,7 +1,6 @@
 using RecurrenceAnalysis
 #using MultipleTesting
 using Distances
-
 const RA = RecurrenceAnalysis
 """
 countvalid(xout, xin)
@@ -31,12 +30,12 @@ countvalid(cube; path=tempname() * ".zarr") = mapCube(countvalid, cube; indims=I
 
 
 """
-rqatrend(xin, xout, thresh)
+rqatrend(xout, xin, thresh)
 
 Compute the RQA trend metric for the non-missing time steps of xin, and save it to xout. 
 `thresh` specifies the epsilon threshold of the Recurrence Plot computation
 """
-function rqatrend(pix_trend, pix, thresh=2)
+function rqatrend_recurrenceanalysis(pix_trend, pix, thresh=2)
     #replace!(pix, -9999 => missing)
     ts = collect(skipmissing(pix))
     #@show length(ts)
@@ -51,28 +50,13 @@ function rqatrend_matrix(pix_trend, pix, thresh=2)
     pix_trend .= RA.trend(rm)
 end
 
-"""rqatrend(cube;thresh=2, path=tempname() * ".zarr")
-
-Compute the RQA trend metric for the datacube `cube` with the epsilon threshold `thresh`.
-"""
-function rqatrend(cube; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...)
-    @show outpath
-    mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=Float32, path=outpath, overwrite, kwargs...))
-end
-
-"""rqatrend(path::AbstractString; thresh=2, outpath=tempname()*".zarr")
-
-Compute the RQA trend metric for the data that is available on `path`.
-"""
-rqatrend(path::AbstractString; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...) = rqatrend(Cube(path); thresh, outpath, overwrite, kwargs...)
-
-
 """
     rqatrend_shuffle(cube; thresh=2, path=tempname() * ".zarr", numshuffle=300)
 Compute the RQA trend metric for shuffled time series of the data cube `cube` with the epsilon threshold `thresh` for `numshuffle` tries and save it into `path`.
 """
 function rqatrend_shuffle(cube; thresh=2, path=tempname() * ".zarr", numshuffle=300)
     # This should be made a random shuffle
+    # TODO this looks completely broken
     sg = surrogenerator(collect(eachindex(water[overlap])), BlockShuffle(7, shift=true))
 end
 
