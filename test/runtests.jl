@@ -2,9 +2,10 @@ using RQADeforestation
 using Test
 import AllocCheck
 import Random
-import Pkg: Artifacts.@artifact_str
+import Pkg: Artifacts.@artifact_str, ensure_artifact_installed
 Random.seed!(1234)
 
+ensure_artifact_installed("rqatestdata", "Artifacts.toml")
 testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-1.0")
 
 @testset "Test data" begin
