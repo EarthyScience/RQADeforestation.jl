@@ -2,7 +2,14 @@ using RQADeforestation
 using Test
 import AllocCheck
 import Random
+import Pkg: Artifacts.@artifact_str
 Random.seed!(1234)
+
+testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-1.0")
+
+@testset "Test data" begin
+    @test isfile(joinpath(testdatapath, "V01R01", "EQUI7_EU020M", "E051N018T3", "SIG0_20210818T051717__VH_D095_E051N018T3_EU020M_V01R01_S1BIWGRDH.tif"))
+end
 
 @testset "RQADeforestation.jl" begin
     # Write your tests here.
