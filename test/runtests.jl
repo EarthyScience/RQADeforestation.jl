@@ -46,3 +46,5 @@ testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-1.0")
     diff = abs(mean(mock_trend))
     @test diff < 0.2
 end
+using TestItemRunner
+@run_package_tests
