@@ -4,7 +4,6 @@ using Dates
 using ArchGDAL: ArchGDAL as AG
 using Glob
 using YAXArrays
-using YAXArrays: YAXDefaults
 using Zarr
 using Distributed: myid
 using NetCDF

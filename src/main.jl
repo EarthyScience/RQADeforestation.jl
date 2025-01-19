@@ -1,4 +1,5 @@
 using ArgParse
+using YAXArrays: YAXDefaults
 
 const argparsesettings = ArgParseSettings()
 @add_arg_table! argparsesettings begin
