@@ -13,6 +13,8 @@ packagecompile:
         # or try the following, which may work because IntelOpenMP and MKL may actually not be needed
         # include_transitive_dependencies=false,
     )
+    # lets have an easy check whether this actually worked
+    touch("packagecompiler/app/done")
 
 testapp:
     #!/usr/bin/env bash
