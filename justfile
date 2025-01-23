@@ -18,6 +18,16 @@ packagecompile:
 
 testapp:
     #!/usr/bin/env bash
-    outdir="tmp/app-out.zarr"
-    rm -rf $outdir
-    packagecompiler/app/bin/RQADeforestation --tile E051N018T3 --continent EU --in-dir "tmp/testdata/subdata/" --out-dir $outdir
+    cd test
+    indir="tmp/apptestdata/in"
+    outdir="tmp/apptestdata/out.zarr"
+    julia --project -e '
+        import Pkg: Artifacts.@artifact_str, ensure_artifact_installed
+        ensure_artifact_installed("rqatestdata", "Artifacts.toml")
+        testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-1.0")
+        testdir = dirname(ARGS[1])
+        rm(testdir, recursive=true, force=true)
+        mkpath(testdir)
+        cp(testdatapath, ARGS[1])
+    ' -- "$indir"
+    ../packagecompiler/app/bin/RQADeforestation --tile E051N018T3 --continent EU --in-dir "$indir" --out-dir "$outdir"

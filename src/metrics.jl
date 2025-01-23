@@ -8,6 +8,7 @@ Distances.eval_end(::CheckedEuclidean, s) = s
 
 
 @testitem "CheckedEuclidean" begin
+    # this nested using seems necesarry because of using test/Project.toml
     using Distances
     @test evaluate(RQADeforestation.CheckedEuclidean(), 2, 5) == evaluate(Euclidean(), 2, 5)
 end

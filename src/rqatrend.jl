@@ -12,6 +12,29 @@ function rqatrend(cube; thresh=2, outpath=tempname() * ".zarr", overwrite=false,
     mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=Float32, path=outpath, overwrite, kwargs...))
 end
 
+@testitem "rqatrend cube" begin
+    using YAXArrays
+    using Dates
+    using DimensionalData: Ti, X, Y
+    using Statistics
+    import Random
+    Random.seed!(1234)
+
+    mock_axes = (
+        Ti(Date("2022-01-01"):Day(1):Date("2022-01-30")),
+        X(range(1, 10, length=10)),
+        Y(range(1, 5, length=15)),
+    )
+    mock_data = rand(30, 10, 15)
+    mock_props = Dict()
+    mock_cube = YAXArray(mock_axes, mock_data, mock_props)
+
+    mock_trend = rqatrend(mock_cube; thresh=0.5)
+    @test mock_trend.axes == (mock_cube.X, mock_cube.Y)
+    diff = abs(mean(mock_trend))
+    @test diff < 0.5
+end
+
 """rqatrend(path::AbstractString; thresh=2, outpath=tempname()*".zarr")
 
 Compute the RQA trend metric for the data that is available on `path`.
@@ -70,6 +93,13 @@ end
 
     @test isapprox(RQADeforestation.rqatrend_impl(y; thresh=0.5), -0.11125611687816017)
     @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Float64}}))
+
+    y2 = similar(y, Union{Float64,Missing})
+    copy!(y2, y)
+    y2[[1, 4, 10, 20, 33, 65]] .= missing
+
+    @test isapprox(RQADeforestation.rqatrend_impl(y2; thresh=0.5), -0.11069045524336744)
+    @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Union{Float64,Missing}}}))
 end
 
 
