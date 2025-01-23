@@ -36,7 +36,6 @@ end
     @test isapprox(RQADeforestation.rqatrend_impl(y2; thresh=0.5), -0.11069045524336744)
     @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Union{Float64,Missing}}}))
 
-
     mock_axes = (
         Ti(Date("2022-01-01"):Day(1):Date("2022-01-30")),
         X(range(1, 10, length=10)),
