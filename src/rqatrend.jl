@@ -26,8 +26,7 @@ Compute the RQA trend metric for the non-missing time steps of xin, and save it 
 `thresh` specifies the epsilon threshold of the Recurrence Plot computation
 """
 function rqatrend(pix_trend, pix, thresh=2)
-    ts = collect(skipmissing(pix))
-    pix_trend .= rqatrend_impl(ts; thresh)
+    pix_trend .= rqatrend_impl(pix; thresh)
 end
 
 
@@ -67,8 +66,17 @@ function tau_rr(y, d; thresh=2, metric=Euclidean())
     if d == 0
         return 1.0
     else
-        # `sum/n` is almost twice as fast as using `mean`
-        return @inbounds sum(evaluate(metric, y[i], y[i+d]) <= thresh for i in 1:length(y)-d) / (length(y)-d)
+        # `sum/n` is almost twice as fast as using `mean`, but sum is probably numerically less accurate
+        nominator = 0
+        denominator = 0
+        @inbounds for i in 1:length(y)-d
+            if y[i] === missing || y[i+d] === missing
+                continue
+            end
+            nominator += evaluate(metric, y[i], y[i+d]) <= thresh
+            denominator += 1
+        end
+        return nominator/denominator
     end
 end
 
