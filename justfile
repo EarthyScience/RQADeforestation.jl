@@ -1,11 +1,18 @@
+default:
+  just --list
+
+# create precompile statements used for `just packagecompile`
 precompilestatements:
     julia --project -e 'import Pkg; Pkg.test(julia_args=`--trace-compile=packagecompiler/precompile_statements.jl`)'
 
+# build an app at `packagecompiler/app/RQADeforestation` with PackageCompiler.jl
 packagecompile:
     #!/usr/bin/env -S julia --project=packagecompiler
     using PackageCompiler
-    rm("packagecompiler/app.backup", recursive=true, force=true)
-    mv("packagecompiler/app", "packagecompiler/app.backup")
+    if isdir("packagecompiler/app") 
+        rm("packagecompiler/app.backup", recursive=true, force=true)
+        mv("packagecompiler/app", "packagecompiler/app.backup")
+    end
     PackageCompiler.create_app(".", "packagecompiler/app"; 
         precompile_statements_file="packagecompiler/precompile_statements.jl",
         # see https://github.com/JuliaLang/PackageCompiler.jl/issues/994
@@ -16,6 +23,7 @@ packagecompile:
     # lets have an easy check whether this actually worked
     touch("packagecompiler/app/done")
 
+# test the app `packagecompiler/app/RQADeforestation` with testdata, writing data to `test/tmp/apptestdata`
 testapp:
     #!/usr/bin/env bash
     cd test
