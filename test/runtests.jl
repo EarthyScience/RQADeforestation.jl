@@ -43,5 +43,7 @@ testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-1.0")
 
     mock_trend = rqatrend(mock_cube; thresh=0.5)
     @test mock_trend.axes == (mock_cube.X, mock_cube.Y)
-    @test abs(mean(mock_trend)) < 0.1
+    diff = abs(mean(mock_trend))
+    @info "Difference: $diff"
+    @test diff < 0.1
 end
