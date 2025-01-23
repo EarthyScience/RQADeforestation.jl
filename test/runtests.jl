@@ -14,12 +14,8 @@ Random.seed!(1234)
 ensure_artifact_installed("rqatestdata", "Artifacts.toml")
 testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-1.0")
 
-@testset "Test data" begin
-    @test isfile(joinpath(testdatapath, "V01R01", "EQUI7_EU020M", "E051N018T3", "SIG0_20210818T051717__VH_D095_E051N018T3_EU020M_V01R01_S1BIWGRDH.tif"))
-end
-
 @testset "RQADeforestation.jl" begin
-    # Write your tests here.
+    @test isfile(joinpath(testdatapath, "V01R01", "EQUI7_EU020M", "E051N018T3", "SIG0_20210818T051717__VH_D095_E051N018T3_EU020M_V01R01_S1BIWGRDH.tif"))
 
     x = 1:0.01:30
     y = sin.(x) + 0.1x + rand(length(x))
