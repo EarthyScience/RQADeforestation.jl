@@ -19,7 +19,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
         with:
-          context: .
+          context: "{{defaultContext}}:.github/workflows"
           file: PackageCompiler.Dockerfile
           tags: danlooo/julia_package_compiler_dev:latest
           cache-from: type=registry,ref=danlooo/julia_package_compiler_dev:cache
