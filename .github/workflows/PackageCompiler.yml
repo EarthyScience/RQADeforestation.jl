@@ -27,4 +27,10 @@ jobs:
           cache-to: type=registry,ref=danlooo/julia_package_compiler_dev:cache,mode=max
 
       - name: Run Docker container
-        run: docker run danlooo/julia_package_compiler_dev:latest
+        run: docker run -v $PWD:/work danlooo/julia_package_compiler_dev:latest /work /work/packagecompiler/app
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: packagecompiler/app
