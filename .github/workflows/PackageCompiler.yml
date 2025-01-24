@@ -19,6 +19,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
         with:
+          push: true
           context: "{{defaultContext}}:packagecompiler"
           file: Dockerfile
           tags: danlooo/julia_package_compiler_dev:latest
