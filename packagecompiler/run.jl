@@ -2,7 +2,7 @@
 
 using PackageCompiler
 
-dir = ARGS[1]
+dir = ARGS
 
 PackageCompiler.create_app(dir, "$dir/packagecompiler/app";
     precompile_statements_file="$dir/packagecompiler/precompile_statements.jl",
