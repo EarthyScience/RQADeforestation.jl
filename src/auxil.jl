@@ -120,7 +120,9 @@ function gdalcube(filenames::AbstractVector{<:AbstractString})
     stacked_gdbs = diskstack(all_gdbs)
     attrs = copy(gdb.attrs)
     #attrs["add_offset"] = Float16(attrs["add_offset"])
-    attrs["scale_factor"] = Float16(attrs["scale_factor"])
+    if haskey(attrs, "scale_factor")
+        attrs["scale_factor"] = Float16(attrs["scale_factor"])
+    end
     all_cfs = CFDiskArray(stacked_gdbs, attrs)
     return YAXArray((onecube.axes..., taxis), all_cfs, onecube.properties)
     #datasetgroups = [datasets[group] for group in groupinds]

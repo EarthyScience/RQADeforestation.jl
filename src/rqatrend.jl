@@ -12,6 +12,29 @@ function rqatrend(cube; thresh=2, outpath=tempname() * ".zarr", overwrite=false,
     mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=Float32, path=outpath, overwrite, kwargs...))
 end
 
+@testitem "rqatrend cube" begin
+    using YAXArrays
+    using Dates
+    using DimensionalData: Ti, X, Y
+    using Statistics
+    import Random
+    Random.seed!(1234)
+
+    mock_axes = (
+        Ti(Date("2022-01-01"):Day(1):Date("2022-01-30")),
+        X(range(1, 10, length=10)),
+        Y(range(1, 5, length=15)),
+    )
+    mock_data = rand(30, 10, 15)
+    mock_props = Dict()
+    mock_cube = YAXArray(mock_axes, mock_data, mock_props)
+
+    mock_trend = rqatrend(mock_cube; thresh=0.5)
+    @test mock_trend.axes == (mock_cube.X, mock_cube.Y)
+    diff = abs(mean(mock_trend))
+    @test diff < 0.5
+end
+
 """rqatrend(path::AbstractString; thresh=2, outpath=tempname()*".zarr")
 
 Compute the RQA trend metric for the data that is available on `path`.
@@ -30,7 +53,7 @@ function rqatrend(pix_trend, pix, thresh=2)
 end
 
 
-function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=Euclidean())
+function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEuclidean())
     # simplified implementation of https://stats.stackexchange.com/a/370175 and https://github.com/joshday/OnlineStats.jl/blob/b89a99679b13e3047ff9c93a03c303c357931832/src/stats/linreg.jl
     # x is the diagonal offset, y the percentage of local recurrence
     # we compute the slope of a simple linear regression with bias from x to y
@@ -59,7 +82,28 @@ function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=Euclidean())
     return 1000.0*(A \ b)[1]  # slope
 end
 
-function tau_rr(y, d; thresh=2, metric=Euclidean())
+
+@testitem "rqatrend_impl" begin
+    import AllocCheck
+    import Random
+    Random.seed!(1234)
+
+    x = 1:0.01:30
+    y = sin.(x) + 0.1x + rand(length(x))
+
+    @test isapprox(RQADeforestation.rqatrend_impl(y; thresh=0.5), -0.11125611687816017)
+    @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Float64}}))
+
+    y2 = similar(y, Union{Float64,Missing})
+    copy!(y2, y)
+    y2[[1, 4, 10, 20, 33, 65]] .= missing
+
+    @test isapprox(RQADeforestation.rqatrend_impl(y2; thresh=0.5), -0.11069045524336744)
+    @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Union{Float64,Missing}}}))
+end
+
+
+function tau_rr(y, d; thresh=2, metric=CheckedEuclidean())
     # d starts counting at 1, so this is the middle diagonal (similar to tau_recurrence implementation, where the first index is always 1.0, i.e. represents the middle diagonal)
     # for the computation starting at 0 is more intuitive
     d -= 1
