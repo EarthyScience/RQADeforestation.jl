@@ -20,7 +20,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: "{{defaultContext}}:packagecompiler"
-          file: PackageCompiler.Dockerfile
+          file: Dockerfile
           tags: danlooo/julia_package_compiler_dev:latest
           cache-from: type=registry,ref=danlooo/julia_package_compiler_dev:cache
           cache-to: type=registry,ref=danlooo/julia_package_compiler_dev:cache,mode=max
