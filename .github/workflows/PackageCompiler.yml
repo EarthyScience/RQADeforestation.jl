@@ -31,6 +31,7 @@ jobs:
 
       - name: Run Docker container
         run: >
+          sudo chown -R $USER:$USER packagecompiler/app &&
           docker pull danlooo/julia_package_compiler_dev:latest &&
           docker run -v $PWD:/work danlooo/julia_package_compiler_dev:latest /work &&
           sudo chown -R $USER:$USER packagecompiler/app
