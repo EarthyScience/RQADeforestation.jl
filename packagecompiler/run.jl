@@ -1,8 +1,8 @@
-#!/usr/bin/env -S julia --threads=auto
+#!/usr/bin/env -S julia --threads=auto --project=/app
 
 using PackageCompiler
 
-dir = ARGS
+dir = ARGS[1]
 
 PackageCompiler.create_app(dir, "$dir/packagecompiler/app";
     precompile_statements_file="$dir/packagecompiler/precompile_statements.jl",
