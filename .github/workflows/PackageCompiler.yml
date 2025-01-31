@@ -30,7 +30,7 @@ jobs:
           cache-to: type=registry,ref=danlooo/julia_package_compiler_dev:cache,mode=max
 
       - name: Run Docker container
-        run: >
+        run: >-
           docker run
             -v $PWD:/work
             -u $(id -u ${USER}):$(id -g ${USER})
