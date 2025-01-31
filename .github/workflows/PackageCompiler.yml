@@ -1,5 +1,8 @@
 name: PackageCompiler
-on: [push, pull_request]
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
 jobs:
   build:
     runs-on: self-hosted
