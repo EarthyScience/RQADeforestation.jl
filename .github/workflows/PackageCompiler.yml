@@ -30,8 +30,9 @@ jobs:
           cache-to: type=registry,ref=danlooo/julia_package_compiler_dev:cache,mode=max
 
       - name: Run Docker container
-        run: docker pull danlooo/julia_package_compiler_dev:latest && \
-          docker run -v $PWD:/work danlooo/julia_package_compiler_dev:latest /work && \
+        run: >
+          docker pull danlooo/julia_package_compiler_dev:latest &&
+          docker run -v $PWD:/work danlooo/julia_package_compiler_dev:latest /work &&
           sudo chown -R $USER:$USER packagecompiler/app
 
       - name: Upload binaries
