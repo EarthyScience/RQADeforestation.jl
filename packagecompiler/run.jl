@@ -1,4 +1,4 @@
-#!/usr/bin/env -S julia --threads=auto --project=/app
+#!/usr/bin/env -S julia --project=/app
 
 using PackageCompiler
 
