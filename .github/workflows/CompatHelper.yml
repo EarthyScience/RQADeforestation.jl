@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 jobs:
   CompatHelper:
-    runs-on: [self-hosted, ubuntu-latest]
+    runs-on: self-hosted
     env:
       JULIA_NUM_THREADS: auto
     steps:
