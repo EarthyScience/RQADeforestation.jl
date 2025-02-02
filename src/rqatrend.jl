@@ -61,6 +61,8 @@ function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEucli
     x_mean = mean(xs)
     xx_mean = sqmean_step1_range(xs) # mean(x*x for x in xs)
 
+    # while xs are Int, the means are all modelled as Float64
+    # this seems to give very overall top performance while being most consice in code 
     n = 0.0
     y_mean = 0.0
     xy_mean = 0.0
@@ -70,11 +72,11 @@ function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEucli
         y_mean = smooth(y_mean, y, inv(n))
         xy_mean = smooth(xy_mean, x*y, inv(n))
     end
-    A = SA[ 
+    A = SA_F64[ 
         xx_mean x_mean
         x_mean  1.0
     ]
-    b = SA[xy_mean, y_mean]
+    b = SA_F64[xy_mean, y_mean]
     # OnlineStats uses `Symmetric(A) \ b`, however this does not work for StaticArrays
     # `cholesky(A) \ b` is recommended instead at discourse https://discourse.julialang.org/t/staticarrays-solve-symmetric-linear-system-seems-typeinstable/124634
     # some timings show that there is no significant speedup when adding cholesky or doing plain static linear regression
@@ -104,6 +106,7 @@ end
 
 
 function tau_rr(y, d; thresh=2, metric=CheckedEuclidean())
+    _thresh = convert(eltype(y), thresh)
     # d starts counting at 1, so this is the middle diagonal (similar to tau_recurrence implementation, where the first index is always 1.0, i.e. represents the middle diagonal)
     # for the computation starting at 0 is more intuitive
     d -= 1
@@ -117,21 +120,22 @@ function tau_rr(y, d; thresh=2, metric=CheckedEuclidean())
             if y[i] === missing || y[i+d] === missing
                 continue
             end
-            nominator += evaluate(metric, y[i], y[i+d]) <= thresh
+            nominator += evaluate(metric, y[i], y[i+d]) <= _thresh
             denominator += 1
         end
         return nominator/denominator
     end
 end
 
-function sqmean_step1_range(xs) 
+function sqmean_step1_range(xs)
+    # assumes xs contains Int for optimal performance
     a = first(xs)
     b = last(xs)
-    return (sumofsquares(b) - sumofsquares(a - 1.0)) / length(xs)
+    return (sumofsquares(b) - sumofsquares(a - 1)) / length(xs)
 end
 
-sumofsquares(n) = n*(n+1.0)*(2.0*n+1.0)/6.0
-sumofsquares(4)
+# assumes n is Int for optimal performance
+sumofsquares(n) = n*(n+1)*(2*n+1)/6
 
 """
     smooth(a, b, γ)
