@@ -6,6 +6,7 @@ on:
 jobs:
   CompatHelper:
     runs-on: self-hosted
+    container: julia:1.11
     env:
       JULIA_NUM_THREADS: auto
     steps:
