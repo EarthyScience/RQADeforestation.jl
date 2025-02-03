@@ -26,7 +26,6 @@ LoggingExtras = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 Missings = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
 NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-
 Proj = "c94c279d-25a6-4763-9509-64d165bea63e"
 Rasters = "a3a2b9e3-a471-40c9-b274-f788e487c689"
 RecurrenceAnalysis = "639c3291-70d9-5ea2-8c5b-839eba1ee399"
@@ -60,7 +59,7 @@ LoggingExtras = "1"
 Missings = "1"
 NetCDF = "0.12"
 Proj = "1"
-Rasters = "0.12,0.13"
+Rasters = "0.12,0.13, 0.14"
 RecurrenceAnalysis = "2"
 Statistics = "1.10"
 TestItems = "1.0.0"
@@ -78,7 +77,6 @@ Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
-
 
 [targets]
 test = ["Test", "TestItemRunner", "Pkg", "Random", "AllocCheck", "BenchmarkTools"]
