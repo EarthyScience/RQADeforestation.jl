@@ -42,7 +42,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          context: "{{defaultContext}}"
+          context: .
           file: Dockerfile
           tags: danlooo/rqa_deforestation:latest, danlooo/rqa_deforestation:${{ github.sha }}
           cache-from: type=registry,ref=danlooo/julia_package_compiler_dev:cache
