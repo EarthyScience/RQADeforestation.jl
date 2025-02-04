@@ -1,0 +1,60 @@
+name: Build binaries and docker images
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push binary docker image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          file: Dockerfile
+          tags: danlooo/rqa_deforestation:latest, danlooo/rqa_deforestation:${{ github.sha }}
+          cache-from: type=registry,ref=danlooo/rqa_deforestation:cache
+          cache-to: type=registry,ref=danlooo/rqa_deforestation:cache,mode=max
+
+      - name: Test container
+        run: |
+          echo "######" test code forked at $(git merge-base --octopus HEAD origin/main)
+
+          docker pull danlooo/rqa_deforestation:${{ github.sha }}
+          git clone https://github.com/meggart/RQADeforestationTestData.git RQADeforestationTestData
+          cd RQADeforestationTestData
+          git checkout v1.0
+          cd ..
+
+          sleep 1
+          echo "######" test start up
+          time docker run danlooo/rqa_deforestation:${{ github.sha }} --help > /dev/null
+
+          sleep 1
+          echo "######" test single core tile subset
+          time docker run --cpus=1 -v $PWD/RQADeforestationTestData:/in -v $PWD:/out \
+            danlooo/rqa_deforestation:${{ github.sha }} \
+            /in EU E051N018T3 --out-dir /out --year 2021 \
+            > /dev/null
+
+          sleep 1
+          echo "######" test multi core tile subset
+          time docker run --cpus=4 -v $PWD/RQADeforestationTestData:/in -v $PWD:/out \
+            danlooo/rqa_deforestation:${{ github.sha }} \
+            /in EU E051N018T3 --out-dir /out --year 2021 \
+            > /dev/null
+
+
+          sudo chown -R $USER:$USER .
