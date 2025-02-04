@@ -1,7 +1,9 @@
-name: PackageCompiler
+name: Build binaries and docker images
 on:
-  schedule:
-    - cron: "0 3 * * *"
+  push:
+    branches:
+      - main
+    tags: ["*"]
   workflow_dispatch:
 jobs:
   build:
@@ -41,8 +43,8 @@ jobs:
         with:
           push: true
           context: "{{defaultContext}}"
-          file: docker/Dockerfile
-          tags: danlooo/rqa_deforestation:latest
+          file: Dockerfile
+          tags: danlooo/rqa_deforestation:latest, danlooo/rqa_deforestation:${{ github.sha }}
           cache-from: type=registry,ref=danlooo/julia_package_compiler_dev:cache
           cache-to: type=registry,ref=danlooo/julia_package_compiler_dev:cache,mode=max
 
