@@ -52,12 +52,21 @@ function rqatrend(pix_trend, pix, thresh=2)
     pix_trend .= rqatrend_impl(pix; thresh)
 end
 
+function length_without_missing(data)
+    sum = 0
+    for x in data
+        x !== missing || continue
+        sum += 1
+    end
+    return sum
+end
+
 
 function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEuclidean())
     # simplified implementation of https://stats.stackexchange.com/a/370175 and https://github.com/joshday/OnlineStats.jl/blob/b89a99679b13e3047ff9c93a03c303c357931832/src/stats/linreg.jl
     # x is the diagonal offset, y the percentage of local recurrence
     # we compute the slope of a simple linear regression with bias from x to y
-    xs = 1+theiler : length(data)-border
+    xs = 1+theiler : length_without_missing(data)-border
     x_mean = mean(xs)
     xx_mean = sqmean_step1_range(xs) # mean(x*x for x in xs)
 
@@ -100,7 +109,10 @@ end
     copy!(y2, y)
     y2[[1, 4, 10, 20, 33, 65]] .= missing
 
-    @test isapprox(RQADeforestation.rqatrend_impl(y2; thresh=0.5), -0.11069045524336744)
+    @test isapprox(RQADeforestation.rqatrend_impl(y2; thresh=0.5), -0.11129267455961903)
+    # semantically this should be the same as if the missings would have been skipped
+    @test isapprox(RQADeforestation.rqatrend_impl(collect(skipmissing(y2)); thresh=0.5), -0.11129267455961903)
+
     @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Union{Float64,Missing}}}))
 end
 
@@ -116,11 +128,29 @@ function tau_rr(y, d; thresh=2, metric=CheckedEuclidean())
         # `sum/n` is almost twice as fast as using `mean`, but sum is probably numerically less accurate
         nominator = 0
         denominator = 0
-        @inbounds for i in 1:length(y)-d
-            if y[i] === missing || y[i+d] === missing
-                continue
+        length_y = length(y)
+        @inbounds for i in 1:length_y-d
+            a = y[i]
+            # we simulate a collect(skipmissing(y)), i.e. 
+            # - a missing start would not have been counted at all
+            # - a missing end would be skipped
+            a !== missing || continue  
+
+            # we need to find the index of the next neighbour which is d fields apart, not counting missing values 
+            nth_neighbour_skipmissing = 0
+            i_neighbour = i
+            local b
+            while (nth_neighbour_skipmissing < d) && (i_neighbour < length_y)
+                i_neighbour += 1
+                b = y[i_neighbour]
+                if b !== missing
+                    nth_neighbour_skipmissing += 1
+                end
             end
-            nominator += evaluate(metric, y[i], y[i+d]) <= _thresh
+            # if we haven't found enough remaining neighbours, we can stop the for loop completely, as d stays the same for the next iteration
+            nth_neighbour_skipmissing == d || break
+            
+            nominator += evaluate(metric, a, b) <= _thresh
             denominator += 1
         end
         return nominator/denominator
