@@ -3,7 +3,7 @@
     import Pkg: Artifacts.@artifact_str, ensure_artifact_installed
 
     ensure_artifact_installed("rqatestdata", "Artifacts.toml")
-    testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-1.0")
+    testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-2.0")
 
     testdir = "tmp/testdata" 
     rm(testdir, recursive=true, force=true)
