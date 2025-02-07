@@ -1,6 +1,6 @@
 [rqatestdata]
-git-tree-sha1 = "ba3717febf44a19ce75ac4df625f8b0281077745"
+git-tree-sha1 = "1dc9d7aa975de4f5ecc652f34d6bbee706fcb7bd"
 
     [[rqatestdata.download]]
-    url = "https://github.com/meggart/RQADeforestationTestData/archive/refs/tags/v1.0.tar.gz"
-    sha256 = "2db9f0d215446a10588e2f3b9117e7f6c7a23ba3f369aa168714b6ba777fcfe9"
+    url = "https://github.com/meggart/RQADeforestationTestData/archive/refs/tags/v2.0.tar.gz"
+    sha256 = "38a3e66a0505ed9d22c6e065627039089a421b0b143ac4c8d78aac45dd3dd497"
