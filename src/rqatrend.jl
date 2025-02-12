@@ -8,7 +8,6 @@ using Distances
 Compute the RQA trend metric for the datacube `cube` with the epsilon threshold `thresh`.
 """
 function rqatrend(cube; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...)
-    @show outpath
     mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=Float32, path=outpath, overwrite, kwargs...))
 end
 
@@ -84,6 +83,29 @@ function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEucli
     return 1000.0*(A \ b)[1]  # slope
 end
 
+function rqatrend_weightedonline(data, timeaxis; thresh=2, border=10, theiler=1, metric=CheckedEuclidean())
+    # simplified implementation of https://stats.stackexchange.com/a/370175 and https://github.com/joshday/OnlineStats.jl/blob/b89a99679b13e3047ff9c93a03c303c357931832/src/stats/linreg.jl
+    # x is the diagonal offset, y the percentage of local recurrence
+    # we compute the slope of a simple linear regression with bias from x to y
+    maxnum = last(timeaxis) - first(timeaxis)
+    start = 1
+    finish = length(data) - border
+    wf = WeightedFit()
+    for i in start:finish
+        data[i] === missing && continue
+        for j in i+theiler:finish
+            data[j] === missing && continue
+            y = Float64(evaluate(metric, data[i], data[j]) <= thresh)
+
+            x = Float64(timeaxis[j] - timeaxis[i])
+            weight = 1 / (maxnum - x)
+            wf = smoowthwlinfit(x, y, weight, wf)
+        end
+    end
+    b = finalizewlinreg(wf)[2]
+    return 1000.0 * b
+end
+
 
 @testitem "rqatrend_impl" begin
     import AllocCheck
@@ -137,11 +159,4 @@ end
 # assumes n is Int for optimal performance
 sumofsquares(n) = n*(n+1)*(2*n+1)/6
 
-"""
-    smooth(a, b, γ)
 
-Weighted average of `a` and `b` with weight `γ`.
-
-``(1 - γ) * a + γ * b``
-"""
-smooth(a, b, γ) = a + γ * (b - a)

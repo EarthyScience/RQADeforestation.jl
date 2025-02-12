@@ -1,3 +1,10 @@
+"""
+    smooth(a, b, γ)
+
+Weighted average of `a` and `b` with weight `γ`.
+
+``(1 - γ) * a + γ * b``
+"""
 smooth(a, b, γ) = a + γ * (b - a)
 
 struct WeightedFit
