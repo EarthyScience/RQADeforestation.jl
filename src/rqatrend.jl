@@ -83,6 +83,25 @@ function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEucli
     return 1000.0*(A \ b)[1]  # slope
 end
 
+@testitem "rqatrend_impl" begin
+    import AllocCheck
+    import Random
+    Random.seed!(1234)
+
+    x = 1:0.01:30
+    y = sin.(x) + 0.1x + rand(length(x))
+
+    @test isapprox(RQADeforestation.rqatrend_impl(y; thresh=0.5), -0.11125611687816017)
+    @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Float64}}))
+
+    y2 = similar(y, Union{Float64,Missing})
+    copy!(y2, y)
+    y2[[1, 4, 10, 20, 33, 65]] .= missing
+
+    @test isapprox(RQADeforestation.rqatrend_impl(y2; thresh=0.5), -0.11069045524336744)
+    @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Union{Float64,Missing}}}))
+end
+
 function rqatrend_weightedonline(data, timeaxis; thresh=2, border=10, theiler=1, metric=CheckedEuclidean())
     # simplified implementation of https://stats.stackexchange.com/a/370175 and https://github.com/joshday/OnlineStats.jl/blob/b89a99679b13e3047ff9c93a03c303c357931832/src/stats/linreg.jl
     # x is the diagonal offset, y the percentage of local recurrence
@@ -106,25 +125,40 @@ function rqatrend_weightedonline(data, timeaxis; thresh=2, border=10, theiler=1,
     return 1000.0 * b
 end
 
-
-@testitem "rqatrend_impl" begin
-    import AllocCheck
-    import Random
+@testitem "Weighted RQATrend with x values" begin
+    using RQADeforestation
+    using Distributions
+    using RecurrenceAnalysis
+    using Random, Test
     Random.seed!(1234)
+    x = 1:200
+    noise = rand(Normal(0, 1), 200)
+    y1 = 2.0 .* sin.(x ./ 10) .+ noise
+    y2 = copy(noise)
+    y2[101:200] .-= 2
 
-    x = 1:0.01:30
-    y = sin.(x) + 0.1x + rand(length(x))
+    # rp1 = RecurrenceMatrix(y1, 0.2)
+    # rp2 = RecurrenceMatrix(y2, 0.2)
+    theiler = 1
+    border = 10
 
-    @test isapprox(RQADeforestation.rqatrend_impl(y; thresh=0.5), -0.11125611687816017)
-    @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Float64}}))
+    rqarange = (1+theiler):(200-border)
 
-    y2 = similar(y, Union{Float64,Missing})
-    copy!(y2, y)
-    y2[[1, 4, 10, 20, 33, 65]] .= missing
+    r1 = RQADeforestation.rqatrend_weightedonline(y2, x)
+    @test r1 == -2.66417434040921
 
-    @test isapprox(RQADeforestation.rqatrend_impl(y2; thresh=0.5), -0.11069045524336744)
-    @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Union{Float64,Missing}}}))
+    # Add some missings
+    y2mis = collect(Union{Missing,Float64}, y2)
+    y2mis[10:20] .= missing
+    goodinds = (!ismissing).(y2mis)
+
+    r1miss = RQADeforestation.rqatrend_weightedonline(y2mis[goodinds], range(0, 1, length=length(y2mis))[goodinds])
+    r2miss = RQADeforestation.rqatrend_weightedonline(y2mis, range(0, 1, length=length(y2mis)))
+    @test r1miss == r2miss == -514.9110636319965
 end
+
+
+
 
 
 function tau_rr(y, d; thresh=2, metric=CheckedEuclidean())
