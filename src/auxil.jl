@@ -1,6 +1,7 @@
 using YAXArrayBase:  backendlist, get_var_handle
 using DiskArrayTools
 using DiskArrays: DiskArrays, GridChunks
+using DiskArrayEngine: DiskArrayEngine as DAE
 using DimensionalData: DimensionalData as DD, X, Y
 using GeoFormatTypes
 #using PyramidScheme: PyramidScheme as PS
@@ -103,19 +104,18 @@ function gdalcube(filenames::AbstractVector{<:AbstractString})
     #@show sdates
     # Put the dates which are 200 seconds apart into groups
     groupinds = grouptimes(sdates, 200000)
-    groupdates = 
 
     groupcubes = map(groupinds) do g
         cubelist = Cube.(sfiles[g])
         gcube = cat(cubelist..., dims=Dim{:Scenes}(1:length(cubelist)))
         aggdata = DAE.aggregate_diskarray(gcube.data, mean ∘ skipmissing, (3=> nothing,); strategy=:direct)
-        yax = YAXArray(DD.dims(gcube)[1:2], aggdata, gcube.properties,)
     end
-
+    data = ConcatDiskArray(reshape(groupcubes, (1,1,length(groupcubes))))
     dates_grouped = [sdates[group[begin]] for group in groupinds]
     taxis = DD.Ti(dates_grouped)
+    gcube = Cube(sfiles[1])
+    return yax = YAXArray((DD.dims(gcube)[1:2]..., taxis), data, gcube.properties,)
 
-    return cat(groupcubes..., dims=taxis)
     #datasets = AG.readraster.(sfiles)
     onefile = first(sfiles)
     gd = backendlist[:gdal]
