@@ -67,8 +67,9 @@ function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEucli
     y_mean = 0.0
     xy_mean = 0.0
     for x in xs
-        n += 1.0
         y = tau_rr(data, x; thresh, metric)
+        isnan(y) && continue
+        n += 1.0
         y_mean = smooth(y_mean, y, inv(n))
         xy_mean = smooth(xy_mean, x*y, inv(n))
     end
@@ -123,6 +124,7 @@ function tau_rr(y, d; thresh=2, metric=CheckedEuclidean())
             nominator += evaluate(metric, y[i], y[i+d]) <= _thresh
             denominator += 1
         end
+        @show denominator
         return nominator/denominator
     end
 end
