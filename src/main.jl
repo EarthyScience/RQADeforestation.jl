@@ -65,7 +65,7 @@ function main(;
     polarisation="VH", 
     orbit="*", 
     threshold=3.0, 
-    folders=["V01R01", "V0M2R4", "V1M0R1", "V1M1R1", "V1M1R2"]
+    folders=[ "V0M2R4", "V1M1R1", "V1M1R2"]
 )
     if isdir(indir) && isempty(indir)
         error("Input directory $indir must not be empty")
