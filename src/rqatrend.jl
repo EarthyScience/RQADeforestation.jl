@@ -49,7 +49,7 @@ Compute the RQA trend metric for the non-missing time steps of xin, and save it 
 `thresh` specifies the epsilon threshold of the Recurrence Plot computation
 """
 function rqatrend(pix_trend, pix, thresh=2)
-    pix_trend .= rqatrend_impl(pix; thresh)
+    pix_trend .= rqatrend_impl(collect(skipmissing(pix)); thresh)
 end
 
 

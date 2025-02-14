@@ -65,7 +65,7 @@ function main(;
     polarisation="VH", 
     orbit="*", 
     threshold=3.0, 
-    folders=["V01R01", "V0M2R4", "V1M0R1", "V1M1R1", "V1M1R2"]
+    folders=[ "V0M2R4", "V1M1R1", "V1M1R2"]
 )
     if isdir(indir) && isempty(indir)
         error("Input directory $indir must not be empty")
@@ -84,10 +84,8 @@ function main(;
 
         filenamelist = [glob("$(sub)/*$(continent)*20M/$(tilefolder)/*$(polarisation)_$(orbit)*.tif", indir) for sub in folders]
         allfilenames = collect(Iterators.flatten(filenamelist))
-        @show allfilenames
 
         relorbits = unique([split(basename(x), "_")[5][2:end] for x in allfilenames])
-        @show relorbits
         for relorbit in relorbits
             for y in years
 
@@ -95,13 +93,11 @@ function main(;
                 @time cube = gdalcube(filenames)
 
                 path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(relorbit)_thresh_$(threshold)_year_$(y)")
-                @show path
                 ispath(path * ".done") && continue
                 ispath(path * "_zerotimesteps.done") && continue
 
                 tcube = cube[Time=Date(y - 1, 7, 1) .. Date(y + 1, 7, 1)]
-                @show size(cube)
-                @show size(tcube)
+
                 if size(tcube, 3) == 0
                     touch(path * "_zerotimesteps.done")
                     continue
