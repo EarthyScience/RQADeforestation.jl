@@ -1,7 +1,6 @@
-using RecurrenceAnalysis
+using RecurrenceAnalysis: RecurrenceAnalysis as RA
 #using MultipleTesting
 using Distances
-const RA = RecurrenceAnalysis
 """
 countvalid(xout, xin)
 
