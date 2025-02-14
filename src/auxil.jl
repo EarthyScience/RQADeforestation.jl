@@ -99,12 +99,23 @@ function gdalcube(filenames::AbstractVector{<:AbstractString})
     p = sortperm(dates)
     sdates = dates[p]
     sfiles = filenames[p]
-    taxis = DD.Ti(sdates)
 
     #@show sdates
     # Put the dates which are 200 seconds apart into groups
-    #groupinds = grouptimes(sdates, 200000)
+    groupinds = grouptimes(sdates, 200000)
+    groupdates = 
 
+    groupcubes = map(groupinds) do g
+        cubelist = Cube.(sfiles[g])
+        gcube = cat(cubelist..., dims=Dim{:Scenes}(1:length(cubelist)))
+        aggdata = DAE.aggregate_diskarray(gcube.data, mean ∘ skipmissing, (3=> nothing,); strategy=:direct)
+        yax = YAXArray(DD.dims(gcube)[1:2], aggdata, gcube.properties,)
+    end
+
+    dates_grouped = [sdates[group[begin]] for group in groupinds]
+    taxis = DD.Ti(dates_grouped)
+
+    return cat(groupcubes..., dims=taxis)
     #datasets = AG.readraster.(sfiles)
     onefile = first(sfiles)
     gd = backendlist[:gdal]
