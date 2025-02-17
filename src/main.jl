@@ -72,10 +72,12 @@ function main(;
     start_date::Date,
     end_date::Date,
     polarisation="VH",
-    orbit="*",
+    orbit="D",
     threshold=3.0,
     folders=["V01R01", "V0M2R4", "V1M0R1", "V1M1R1", "V1M1R2"]
 )
+
+    in(orbit, ["A", "D"]) || error("Orbit needs to be either A or D")
     if isdir(indir) && isempty(indir)
         error("Input directory $indir must not be empty")
     end
@@ -106,10 +108,10 @@ function main(;
             filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
             @time cube = gdalcube(filenames)
 
-            path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(relorbit)_thresh_$(threshold)")
-            @show path
-            ispath(path * ".done") && continue
-            ispath(path * "_zerotimesteps.done") && continue
+                path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)_year_$(y)")
+                @show path
+                ispath(path * ".done") && continue
+                ispath(path * "_zerotimesteps.done") && continue
 
             tcube = cube[Time=start_date .. end_date]
             @show size(cube)
