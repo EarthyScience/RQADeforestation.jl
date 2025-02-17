@@ -57,7 +57,7 @@ where the difference between neighbouring elements are less than `timediff` mill
 This returns the indices of the subgroups as a vector of vectors.
 """
 function grouptimes(times, timediff=200000)
-    @assert sort(times) == times
+    @assert issorted(times)
     group = [1]
     groups = [group]
 
@@ -69,6 +69,24 @@ function grouptimes(times, timediff=200000)
         else
             push!(groups, [i])
             group = groups[end]
+        end
+    end
+    return groups
+end
+
+function stackindices(times, timediff=200000)
+    @assert issorted(times)
+    groups = zero(eachindex(times))
+    group = 1
+    groups[1] = group
+
+    for i in 2:length(times)
+        period = times[i] - times[i-1]
+        if period.value < timediff
+            groups[i] = group
+        else
+            group += 1 
+            groups[i] = group
         end
     end
     return groups
@@ -94,8 +112,9 @@ function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
 end
 =#
 
-function gdalcube(filenames::AbstractVector{<:AbstractString})
+function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=true)
     dates = getdate.(filenames)
+    @show length(dates)
     # Sort the dates and files by DateTime
     p = sortperm(dates)
     sdates = dates[p]
@@ -103,20 +122,37 @@ function gdalcube(filenames::AbstractVector{<:AbstractString})
 
     #@show sdates
     # Put the dates which are 200 seconds apart into groups
+    if stackgroups
     groupinds = grouptimes(sdates, 200000)
-
+    onefile = first(sfiles)
+    gd = backendlist[:gdal]
+    yax1 = gd(onefile)
+    #gdb = yax1["Gray"]
+    #onecube = Cube(onefile)
+    #@show onecube.axes
+    gdb = get_var_handle(yax1, "Gray")
+    gdbband = gdb.band
+    gdbsize = gdb.size
+    gdbattrs = gdb.attrs
+    gdbcs = gdb.cs
     groupcubes = map(groupinds) do g
-        cubelist = Cube.(sfiles[g])
-        gcube = cat(cubelist..., dims=Dim{:Scenes}(1:length(cubelist)))
-        aggdata = DAE.aggregate_diskarray(gcube.data, mean ∘ skipmissing, (3=> nothing,); strategy=:direct)
+        group_gdbs = map(sfiles[g]) do f
+            BufferGDALBand{eltype(gdb)}(f, gdbband, gdbsize, gdbattrs, gdbcs, Dict{Int,AG.IRasterBand}())
+        end
+
+        cubelist = CFDiskArray.(group_gdbs, (gdbattrs,))
+        gcube = diskstack(cubelist)
+        aggdata = DAE.aggregate_diskarray(gcube, mean ∘ skipmissing, (3=> nothing,); strategy=:direct)
     end
-    data = ConcatDiskArray(reshape(groupcubes, (1,1,length(groupcubes))))
+    data = DiskArrays.ConcatDiskArray(reshape(groupcubes, (1,1,length(groupcubes))))
     dates_grouped = [sdates[group[begin]] for group in groupinds]
     taxis = DD.Ti(dates_grouped)
     gcube = Cube(sfiles[1])
     return yax = YAXArray((DD.dims(gcube)[1:2]..., taxis), data, gcube.properties,)
-
+else
     #datasets = AG.readraster.(sfiles)
+    taxis = DD.Ti(sdates)
+
     onefile = first(sfiles)
     gd = backendlist[:gdal]
     yax1 = gd(onefile)
@@ -136,6 +172,7 @@ function gdalcube(filenames::AbstractVector{<:AbstractString})
     end
     all_cfs = CFDiskArray(stacked_gdbs, attrs)
     return YAXArray((onecube.axes..., taxis), all_cfs, onecube.properties)
+end
     #datasetgroups = [datasets[group] for group in groupinds]
     #We have to save the vrts because the usage of nested vrts is not working as a rasterdataset
     #temp = tempdir()
