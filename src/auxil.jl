@@ -135,20 +135,19 @@ function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=true)
     gdbsize = gdb.size
     gdbattrs = gdb.attrs
     gdbcs = gdb.cs
-    groupcubes = map(groupinds) do g
-        group_gdbs = map(sfiles[g]) do f
+    group_gdbs = map(sfiles) do f
             BufferGDALBand{eltype(gdb)}(f, gdbband, gdbsize, gdbattrs, gdbcs, Dict{Int,AG.IRasterBand}())
-        end
-
-        cubelist = CFDiskArray.(group_gdbs, (gdbattrs,))
-        gcube = diskstack(cubelist)
-        aggdata = DAE.aggregate_diskarray(gcube, mean ∘ skipmissing, (3=> nothing,); strategy=:direct)
     end
-    data = DiskArrays.ConcatDiskArray(reshape(groupcubes, (1,1,length(groupcubes))))
+
+    cubelist = CFDiskArray.(group_gdbs, (gdbattrs,))
+    gcube = diskstack(cubelist)
+    aggdata = DAE.aggregate_diskarray(gcube, mean ∘ skipmissing, (3=> stackindices(sdates),); strategy=:direct)
+#    data = DiskArrays.ConcatDiskArray(reshape(groupcubes, (1,1,length(groupcubes))))
     dates_grouped = [sdates[group[begin]] for group in groupinds]
+
     taxis = DD.Ti(dates_grouped)
     gcube = Cube(sfiles[1])
-    return yax = YAXArray((DD.dims(gcube)[1:2]..., taxis), data, gcube.properties,)
+    return YAXArray((DD.dims(gcube)[1:2]..., taxis), aggdata, gcube.properties,)
 else
     #datasets = AG.readraster.(sfiles)
     taxis = DD.Ti(sdates)
