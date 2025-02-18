@@ -6,6 +6,42 @@ using DimensionalData: DimensionalData as DD, X, Y
 using GeoFormatTypes
 #using PyramidScheme: PyramidScheme as PS
 using Rasters: Raster
+import DiskArrays: readblock!, IrregularChunks, AbstractDiskArray
+using StatsBase: rle
+using Statistics: mean
+
+#DiskArrays.readblock!(a::AbstractArray,aout,i::AbstractUnitRange...) = copyto!(aout,view(a,i...))
+
+struct LazyAggDiskArray{T,F,A} <: AbstractDiskArray{T,3}
+    f::F
+    arrays::A
+    inds::IrregularChunks
+    s::Tuple{Int,Int,Int}
+end
+function LazyAggDiskArray(f,arrays,groups)
+    allequal(size,arrays) || error("All Arrays must have same size")
+    allequal(eltype,arrays) || error("All Arrays must have same element type")
+    inds = IrregularChunks(;chunksizes=last(rle(groups)))
+    s = (size(first(arrays))...,length(inds))
+    T = Base.promote_op(f,Vector{eltype(first(arrays))})
+    LazyAggDiskArray{T,typeof(f),typeof(arrays)}(f,arrays,inds,s)
+end
+Base.size(a::LazyAggDiskArray) = a.s
+DiskArrays.haschunks(a::LazyAggDiskArray) = DiskArrays.haschunks(first(a.arrays))
+function DiskArrays.readblock!(a::LazyAggDiskArray,aout,i::UnitRange{Int}...)
+    i1,i2,itime = i
+    max_n_array = maximum(it->length(a.inds[it]),itime)
+    buf = zeros(eltype(first(a.arrays)),length(i1),length(i2),max_n_array)
+    for (j, it) in enumerate(itime)
+        arrays_now = a.arrays[a.inds[it]]
+        for ia in 1:length(arrays_now)
+            DiskArrays.readblock!(arrays_now[ia],view(buf,:,:,ia),i1,i2)
+        end
+        vbuf = view(buf,:,:,1:length(arrays_now))
+        map!(a.f,view(aout,:,:,j),eachslice(vbuf,dims=(1,2)))
+    end
+end
+
 
 struct BufferGDALBand{T} <: AG.DiskArrays.AbstractDiskArray{T,2}
     filename::String
@@ -112,7 +148,7 @@ function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
 end
 =#
 
-function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=true)
+function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:dae)
     dates = getdate.(filenames)
     @show length(dates)
     # Sort the dates and files by DateTime
@@ -122,7 +158,7 @@ function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=true)
 
     #@show sdates
     # Put the dates which are 200 seconds apart into groups
-    if stackgroups
+    if stackgroups in [:dae, :lazyagg]
     groupinds = grouptimes(sdates, 200000)
     onefile = first(sfiles)
     gd = backendlist[:gdal]
@@ -140,14 +176,20 @@ function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=true)
     end
 
     cubelist = CFDiskArray.(group_gdbs, (gdbattrs,))
-    gcube = diskstack(cubelist)
-    aggdata = DAE.aggregate_diskarray(gcube, mean ∘ skipmissing, (3=> stackindices(sdates),); strategy=:direct)
+    stackinds = stackindices(sdates)
+    aggdata = if stackgroups == :dae
+        gcube = diskstack(cubelist)
+        aggdata = DAE.aggregate_diskarray(gcube, mean ∘ skipmissing, (3=> stackinds,); strategy=:direct)
+    else
+        println("Construct lazy diskarray")
+        LazyAggDiskArray(mean ∘ skipmissing, cubelist, stackinds)
+    end
 #    data = DiskArrays.ConcatDiskArray(reshape(groupcubes, (1,1,length(groupcubes))))
     dates_grouped = [sdates[group[begin]] for group in groupinds]
 
     taxis = DD.Ti(dates_grouped)
     gcube = Cube(sfiles[1])
-    return YAXArray((DD.dims(gcube)[1:2]..., taxis), aggdata, gcube.properties,)
+    return YAXArray((DD.dims(gcube)[1:2]..., taxis), aggdata, gcube.properties,)    
 else
     #datasets = AG.readraster.(sfiles)
     taxis = DD.Ti(sdates)

@@ -1,6 +1,7 @@
 using ArgParse
 using YAXArrays: YAXDefaults
 
+
 const argparsesettings = ArgParseSettings()
 @add_arg_table! argparsesettings begin
     "--threshold", "-t"
@@ -65,7 +66,8 @@ function main(;
     polarisation="VH", 
     orbit="D", 
     threshold=3.0, 
-    folders=["V01R01", "V0M2R4", "V1M0R1", "V1M1R1", "V1M1R2"]
+    folders=["V01R01", "V0M2R4", "V1M0R1", "V1M1R1", "V1M1R2"],
+    stack=:dae
 )
 
     in(orbit, ["A", "D"]) || error("Orbit needs to be either A or D")
@@ -86,7 +88,6 @@ function main(;
 
         filenamelist = [glob("$(sub)/*$(continent)*20M/$(tilefolder)/*$(polarisation)_$(orbit)*.tif", indir) for sub in folders]
         allfilenames = collect(Iterators.flatten(filenamelist))
-        @show allfilenames
 
         relorbits = unique([split(basename(x), "_")[5][2:end] for x in allfilenames])
         @show relorbits
@@ -94,7 +95,7 @@ function main(;
             for y in years
 
                 filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
-                @time cube = gdalcube(filenames)
+                @time cube = gdalcube(filenames, stack)
 
                 path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)_year_$(y)")
                 @show path
@@ -112,7 +113,7 @@ function main(;
                     @time rqatrend(tcube; thresh=threshold, outpath=path * ".zarr", overwrite=true)
                 catch e
 
-                    if hasproperty(e, :captured) && e.captured.ex isa ArchGDAL.GDAL.GDALError
+                    if hasproperty(e, :captured) && e.captured.ex isa AG.GDAL.GDALError
                         println("Found GDALError:")
                         println(e.captured.ex.msg)
                         continue
