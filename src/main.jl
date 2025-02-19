@@ -11,12 +11,13 @@ const argparsesettings = ArgParseSettings()
     help = "Polarisation that should be stacked"
     default = "VH"
 
-    "--years", "--year", "-y"
-    help = "Year in which the RQA Trend should be detected. 
-    We take a buffer of six month before and after the year to end up with two years of data."
-    default = [2018, 2019, 2020, 2021, 2022, 2023]
-    nargs = '+'
-    arg_type = Int
+    "--start-date"
+    help = "Start date of the time series to analyze in ISO 8601 format YYYY-MM-DD"
+    arg_type = String
+
+    "--end-date"
+    help = "End date of the time series to analyze in ISO 8601 format YYYY-MM-DD"
+    arg_type = String
 
     "--orbit", "-o"
     help = "One of: Orbit number, 'A' for ascending, 'D' for descending, '*' for all orbits"
@@ -58,13 +59,14 @@ end
 
 function main(;
     tiles::Vector{String},
-    continent::String, 
+    continent::String,
     indir::String,
     outdir="out.zarr",
-    years=[2018, 2019, 2020, 2021, 2022, 2023],
-    polarisation="VH", 
-    orbit="*", 
-    threshold=3.0, 
+    start_date::Date,
+    end_date::Date,
+    polarisation="VH",
+    orbit="*",
+    threshold=3.0,
     folders=["V01R01", "V0M2R4", "V1M0R1", "V1M1R1", "V1M1R2"]
 )
     if isdir(indir) && isempty(indir)
@@ -89,42 +91,39 @@ function main(;
         relorbits = unique([split(basename(x), "_")[5][2:end] for x in allfilenames])
         @show relorbits
         for relorbit in relorbits
-            for y in years
+            filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
+            @time cube = gdalcube(filenames)
 
-                filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
-                @time cube = gdalcube(filenames)
+            path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(relorbit)_thresh_$(threshold)")
+            @show path
+            ispath(path * ".done") && continue
+            ispath(path * "_zerotimesteps.done") && continue
 
-                path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(relorbit)_thresh_$(threshold)_year_$(y)")
-                @show path
-                ispath(path * ".done") && continue
-                ispath(path * "_zerotimesteps.done") && continue
-
-                tcube = cube[Time=Date(y - 1, 7, 1) .. Date(y + 1, 7, 1)]
-                @show size(cube)
-                @show size(tcube)
-                if size(tcube, 3) == 0
-                    touch(path * "_zerotimesteps.done")
-                    continue
-                end
-                try
-                    @time rqatrend(tcube; thresh=threshold, outpath=path * ".zarr", overwrite=true)
-                catch e
-
-                    if hasproperty(e, :captured) && e.captured.ex isa ArchGDAL.GDAL.GDALError
-                        println("Found GDALError:")
-                        println(e.captured.ex.msg)
-                        continue
-                    else
-                        rethrow(e)
-                    end
-                end
-                #=@everywhere begin
-                    fname = "$(VERSION)_$(getpid())_$(time_ns()).heapsnapshot"
-                    Profile.take_heap_snapshot(fname;streaming=true)
-                end
-                =#
-                touch(path * ".done")
+            tcube = cube[Time=start_date .. end_date]
+            @show size(cube)
+            @show size(tcube)
+            if size(tcube, 3) == 0
+                touch(path * "_zerotimesteps.done")
+                continue
             end
+            try
+                @time rqatrend(tcube; thresh=threshold, outpath=path * ".zarr", overwrite=true)
+            catch e
+
+                if hasproperty(e, :captured) && e.captured.ex isa ArchGDAL.GDAL.GDALError
+                    println("Found GDALError:")
+                    println(e.captured.ex.msg)
+                    continue
+                else
+                    rethrow(e)
+                end
+            end
+            #=@everywhere begin
+                fname = "$(VERSION)_$(getpid())_$(time_ns()).heapsnapshot"
+                Profile.take_heap_snapshot(fname;streaming=true)
+            end
+            =#
+            touch(path * ".done")
         end
     end
 end
