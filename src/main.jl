@@ -2,6 +2,9 @@ using ArgParse
 using YAXArrays: YAXDefaults
 
 const argparsesettings = ArgParseSettings()
+
+ArgParse.parse_item(::Type{Date}, x::AbstractString) = Date(x)
+
 @add_arg_table! argparsesettings begin
     "--threshold", "-t"
     help = "Threshold for the recurrence matrix computation"
