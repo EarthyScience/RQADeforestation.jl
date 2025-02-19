@@ -13,11 +13,15 @@ const argparsesettings = ArgParseSettings()
 
     "--start-date"
     help = "Start date of the time series to analyze in ISO 8601 format YYYY-MM-DD"
-    arg_type = String
+    required = true
+    arg_type = Date
+    dest_name = "start_date"
 
     "--end-date"
     help = "End date of the time series to analyze in ISO 8601 format YYYY-MM-DD"
-    arg_type = String
+    required = true
+    arg_type = Date
+    dest_name = "end_date"
 
     "--orbit", "-o"
     help = "One of: Orbit number, 'A' for ascending, 'D' for descending, '*' for all orbits"
