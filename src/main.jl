@@ -86,8 +86,8 @@ function main(;
         @info "Write output to $outdir"
     end
 
-    if end_date - start_date < Dates.Day(365)
-        @warn "Selected time series is less than a year. This will introduce seasonal bias."
+    if Dates.Day(start_date) != Dates.Day(end_date) || Dates.Month(start_date) != Dates.Month(end_date)
+        @warn "Selected time series does not include a multiple of whole years. This might introduce seasonal bias."
     end
 
     YAXDefaults.workdir[] = outdir
