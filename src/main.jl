@@ -85,6 +85,11 @@ function main(;
         mkdir(outdir)
         @info "Write output to $outdir"
     end
+
+    if end_date - start_date < Dates.Day(365)
+        @warn "Selected time series is less than a year. This will introduce seasonal bias."
+    end
+
     YAXDefaults.workdir[] = outdir
 
     corruptedfiles = "corrupted_tiles.txt"
