@@ -29,7 +29,7 @@ ArgParse.parse_item(::Type{Date}, x::AbstractString) = Date(x)
 
     "--orbit", "-o"
     help = "One of: Orbit number, 'A' for ascending, 'D' for descending, '*' for all orbits"
-    default = "*"
+    default = "A"
 
     "--out-dir", "-d"
     help = "Path to output zarr dataset"
@@ -78,7 +78,6 @@ function main(;
     folders=["V1M0R1", "V1M1R1", "V1M1R2"],
     stack=:dae
 )
-
     in(orbit, ["A", "D"]) || error("Orbit needs to be either A or D")
     if isdir(indir) && isempty(indir)
         error("Input directory $indir must not be empty")
