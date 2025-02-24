@@ -5,7 +5,7 @@
     ensure_artifact_installed("rqatestdata", "Artifacts.toml")
     testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-2.0")
 
-    testdir = "tmp/testdata" 
+    testdir = "tmp/testdata"
     rm(testdir, recursive=true, force=true)
     mkpath(testdir)
     outdir = "$testdir/out.zarr"
@@ -16,6 +16,8 @@
     copy!(ARGS, [
         "--tile", "E051N018T3",
         "--continent", "EU",
+        "--start-date", "2021-01-01",
+        "--end-date", "2021-12-31",
         "--in-dir", indir,
         "--out-dir", outdir,
     ])
