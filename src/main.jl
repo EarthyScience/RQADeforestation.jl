@@ -86,7 +86,7 @@ function main(;
         @info "Write output to $outdir"
     end
 
-    if Dates.Day(start_date) != Dates.Day(end_date) || Dates.Month(start_date) != Dates.Month(end_date)
+    if monthday(start_date) != monthday(end_date)
         @warn "Selected time series does not include a multiple of whole years. This might introduce seasonal bias."
     end
 
