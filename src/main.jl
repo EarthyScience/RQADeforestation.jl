@@ -75,7 +75,7 @@ function main(;
     polarisation="VH",
     orbit="D",
     threshold=3.0,
-    folders=["V01R01", "V0M2R4", "V1M0R1", "V1M1R1", "V1M1R2"]
+    folders=["V1M0R1", "V1M1R1", "V1M1R2"],
     stack=:dae
 )
 
