@@ -106,15 +106,13 @@ function main(;
         relorbits = unique([split(basename(x), "_")[5][2:end] for x in allfilenames])
         @show relorbits
         for relorbit in relorbits
-            for y in years
+            filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
+            @time cube = gdalcube(filenames, stack)
 
-                filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
-                @time cube = gdalcube(filenames, stack)
-
-                path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)_year_$(y)")
-                @show path
-                ispath(path * ".done") && continue
-                ispath(path * "_zerotimesteps.done") && continue
+            path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)_year_$(y)")
+            @show path
+            ispath(path * ".done") && continue
+            ispath(path * "_zerotimesteps.done") && continue
 
             tcube = cube[Time=start_date .. end_date]
             @show size(cube)
