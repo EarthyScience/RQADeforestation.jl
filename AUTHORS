@@ -1,0 +1,12 @@
+# This is the official list of authors who have made significant contributions to this repository
+#
+# Names should be added to this file in the following format:
+# Name or Organization <email address>
+# Please keep this list sorted alphabetically by first name.
+# This list of all contributors can be generated using the git command:
+# git log --all --format='%aN <%aE>' | sort -u
+
+Daniel Loos <dloos@bgc-jena.mpg.de>
+Fabian Gans <fgans@bgc-jena.mpg.de>
+Felix Cremer <fcremer@bgc-jena.mpg.de>
+Stephan Sahm <stephan.sahm@jolin.io>
