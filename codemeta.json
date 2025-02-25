@@ -1,0 +1,69 @@
+{
+    "@context": "https://w3id.org/codemeta/3.0",
+    "type": "SoftwareSourceCode",
+    "applicationCategory": "Earth Observation",
+    "author": [
+        {
+            "id": "https://orcid.org/0000-0002-4024-4443",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Max Planck Institute for Biogeochemistry, Jena, Germany"
+            },
+            "email": "dloos@bgc-jena.mpg.de",
+            "familyName": "Loos",
+            "givenName": "Daniel"
+        },
+        {
+            "id": "https://orcid.org/0000-0001-8659-4361",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Max Planck Institute for Biogeochemistry, Jena, Germany"
+            },
+            "email": "fcremer@bgc-jena.mpg.de",
+            "familyName": "Cremer",
+            "givenName": "Felix"
+        },
+        {
+            "id": "https://orcid.org/0000-0001-9614-0435",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Max Planck Institute for Biogeochemistry, Jena, Germany"
+            },
+            "email": "fgans@bgc-jena.mpg.de",
+            "familyName": "Gans",
+            "givenName": "Fabian"
+        },
+        {
+            "id": "_:author_4",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "jolin.io consulting"
+            },
+            "email": "stephan.sahm@jolin.io",
+            "familyName": "Sahm",
+            "givenName": "Stephan"
+        }
+    ],
+    "dateCreated": "2024-10-28",
+    "description": "Sentinel-1 based deforestation detection based on recurrence quantification analysis (RQA) and written in Julia.",
+    "funder": {
+        "type": "Organization",
+        "name": "ESA, ESA Network of Resources"
+    },
+    "isPartOf": "https://github.com/EarthyScience/FAIRSenDD",
+    "keywords": [
+        "Sentinel-1",
+        "deforestation",
+        "detection"
+    ],
+    "license": "https://spdx.org/licenses/MIT",
+    "name": "RQADeforestation.jl",
+    "operatingSystem": "Linux",
+    "programmingLanguage": "Julia",
+    "developmentStatus": "active",
+    "referencePublication": "https://dx.doi.org/10.1109/JSTARS.2020.3019333"
+}
