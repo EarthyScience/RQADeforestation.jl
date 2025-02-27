@@ -5,7 +5,7 @@
     ensure_artifact_installed("rqatestdata", "Artifacts.toml")
     testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-2.0")
 
-    testdir = "/tmp/testdata"
+    testdir = tempname()
     rm(testdir, recursive=true, force=true)
     mkpath(testdir)
     outdir = "$testdir/out.zarr"
@@ -36,7 +36,7 @@ end
     ensure_artifact_installed("rqatestdata", "Artifacts.toml")
     testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-2.0")
 
-    testdir = "tmp/testdata2"
+    testdir = tempname()
     rm(testdir, recursive=true, force=true)
     mkpath(testdir)
     outdir = "$testdir/out.zarr"
