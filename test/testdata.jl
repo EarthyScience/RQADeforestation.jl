@@ -18,9 +18,10 @@
     RQADeforestation.main(;
         tiles=["E051N018T3"],
         continent="EU",
-        indir="../../RQADeforestationTestData",
+        indir=indir,
         start_date=Date("2021-01-01"),
-        end_date=Date("2021-12-31"), outdir=outdir
+        end_date=Date("2021-12-31"),
+        outdir=outdir
     )
     a = open_dataset(outdir * "/E051N018T3_rqatrend_VH_D022_thresh_3.0.zarr").layer
 
