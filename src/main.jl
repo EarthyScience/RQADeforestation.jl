@@ -29,7 +29,7 @@ ArgParse.parse_item(::Type{Date}, x::AbstractString) = Date(x)
 
     "--orbit", "-o"
     help = "One of: Orbit number, 'A' for ascending, 'D' for descending, '*' for all orbits"
-    default = "A"
+    default = "D"
 
     "--out-dir", "-d"
     help = "Path to output zarr dataset"
@@ -53,7 +53,7 @@ ArgParse.parse_item(::Type{Date}, x::AbstractString) = Date(x)
 
     "--folders", "--folder"
     help = "subfolders taken into account"
-    default = ["V01R01", "V0M2R4", "V1M0R1", "V1M1R1", "V1M1R2"]
+    default = ["V1M0R1", "V1M1R1", "V1M1R2"]
     arg_type = String
     nargs = '*'
 end
@@ -98,17 +98,17 @@ function main(;
     corruptedfiles = "corrupted_tiles.txt"
     # TODO save the corrupt files to a txt for investigation
     for tilefolder in tiles
-
         filenamelist = [glob("$(sub)/*$(continent)*20M/$(tilefolder)/*$(polarisation)_$(orbit)*.tif", indir) for sub in folders]
         allfilenames = collect(Iterators.flatten(filenamelist))
 
         relorbits = unique([split(basename(x), "_")[5][2:end] for x in allfilenames])
         @show relorbits
+
         for relorbit in relorbits
             filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
             @time cube = gdalcube(filenames, stack)
 
-            path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)_year_$(y)")
+            path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)")
             @show path
             ispath(path * ".done") && continue
             ispath(path * "_zerotimesteps.done") && continue
