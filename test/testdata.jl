@@ -20,7 +20,7 @@
         continent="EU",
         indir=indir,
         start_date=Date("2021-01-01"),
-        end_date=Date("2021-12-31"),
+        end_date=Date("2022-01-01"),
         outdir=outdir
     )
     a = open_dataset(outdir * "/E051N018T3_rqatrend_VH_D022_thresh_3.0.zarr").layer
