@@ -73,10 +73,10 @@ function main(;
     start_date::Date,
     end_date::Date,
     polarisation="VH",
-    orbit="D",
+    orbit="A",
     threshold=3.0,
-    folders=["V1M0R1", "V1M1R1", "V1M1R2"],
-    stack=:dae
+    folders=["V0M2R4", "V1M1R1", "V1M1R2", ],
+    stackstrategy=:lazyagg
 )
     in(orbit, ["A", "D"]) || error("Orbit needs to be either A or D")
     if isdir(indir) && isempty(indir)
@@ -106,9 +106,9 @@ function main(;
 
         for relorbit in relorbits
             filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
-            @time cube = gdalcube(filenames, stack)
+            @time cube = gdalcube(filenames, stackstrategy)
 
-            path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)")
+            path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)_start_$(start_date)_end_$end_date")
             @show path
             ispath(path * ".done") && continue
             ispath(path * "_zerotimesteps.done") && continue
