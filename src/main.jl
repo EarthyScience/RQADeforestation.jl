@@ -121,7 +121,9 @@ function main(;
                 continue
             end
             try
-                @time rqatrend(tcube; thresh=threshold, outpath=path * ".zarr", overwrite=true)
+                outpath = path * ".zarr"
+                @time rqatrend(tcube; thresh=threshold, outpath=outpath, overwrite=true)
+                Zarr.consolidate_metadata(outpath)
             catch e
 
                 if hasproperty(e, :captured) && e.captured.ex isa ArchGDAL.GDAL.GDALError
