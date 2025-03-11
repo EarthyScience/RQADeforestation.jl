@@ -1,4 +1,4 @@
-using YAXArrayBase: GDALBand, GDALDataset, get_var_handle
+using YAXArrayBase: backendlist, get_var_handle
 using DiskArrayTools
 using DiskArrays: DiskArrays, GridChunks
 using DimensionalData: DimensionalData as DD, X, Y
@@ -107,12 +107,13 @@ function gdalcube(filenames::AbstractVector{<:AbstractString})
 
     #datasets = AG.readraster.(sfiles)
     onefile = first(sfiles)
-    yax1 = GDALDataset(onefile)
+    gd = backendlist[:gdal]
+    yax1 = gd(onefile)
     onecube = Cube(onefile)
     #@show onecube.axes
     gdb = get_var_handle(yax1, "Gray")
 
-    @assert gdb isa GDALBand
+    #@assert gdb isa GDALBand
     all_gdbs = map(sfiles) do f
         gd = BufferGDALBand{eltype(gdb)}(f, gdb.band, gdb.size, gdb.attrs, gdb.cs, Dict{Int,AG.IRasterBand}())
     end
