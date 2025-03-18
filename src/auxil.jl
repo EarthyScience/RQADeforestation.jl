@@ -4,7 +4,6 @@ using DiskArrays: DiskArrays, GridChunks
 using DiskArrayEngine: DiskArrayEngine as DAE
 using DimensionalData: DimensionalData as DD, X, Y
 using GeoFormatTypes
-#using PyramidScheme: PyramidScheme as PS
 using Rasters: Raster
 import DiskArrays: readblock!, IrregularChunks, AbstractDiskArray
 using StatsBase: rle
