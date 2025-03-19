@@ -69,8 +69,15 @@ function DiskArrays.readblock!(b::BufferGDALBand, aout, r::AbstractUnitRange...)
 end
 
 function getdate(x, reg=r"[0-9]{8}T[0-9]{6}", df=dateformat"yyyymmddTHHMMSS")
-    m = match(reg, x).match
-    date = DateTime(m, df)
+    m = match(reg, x)
+    isnothing(m) && throw(ArgumentError("Did not find a datetime information in $x"))
+    date = DateTime(m.match, df)
+end
+
+@testitem "getdate" begin
+    using Dates
+    @test RQADeforestation.getdate("sometext20200919T202020_somemoretext1234") == DateTime(2020,9,19, 20,20,20)
+    @test_throws  Exception RQADeforestation.getdate("sometext")
 end
 
 """
@@ -108,6 +115,7 @@ function grouptimes(times, timediff=200000)
     end
     return groups
 end
+
 
 function stackindices(times, timediff=200000)
     @assert issorted(times)
