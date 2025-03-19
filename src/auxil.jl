@@ -259,13 +259,6 @@ function agcube(filenames::AbstractVector{<:AbstractString})
     return concatenatecubes(yaxlist, taxis)
 end
 
-function netcdfify(path)
-    c = Cube(path)
-    npath = splitext(path)[1] * ".nc"
-    fl32 = map(x -> ismissing(x) ? x : Float32(x), c)
-    fl32.properties["_FillValue"] *= 1.0f0
-    savecube(fl32, npath; compress=5)
-end
 
 const equi7crs = Dict(
     "AF" => ProjString("+proj=aeqd +lat_0=8.5 +lon_0=21.5 +x_0=5621452.01998 +y_0=5990638.42298 +datum=WGS84 +units=m +no_defs"),

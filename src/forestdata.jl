@@ -1,6 +1,6 @@
 
 # Auxillary functions for masking with the forest data
-
+#=
 function getsubtiles(tile)
     east = eastint(tile)
     north = northint(tile)
@@ -71,3 +71,16 @@ function maskforests(tilepath, outdir=".")
     mras = forras .* ras
     write(joinpath(outdir, "forestmasked_all" * tile * suffix), mras)
 end
+
+"""
+    netcdfify(path)
+Convert the raster data at `path` to netcdf by converting the data to Float32 and resaving.
+"""
+function netcdfify(path)
+    c = Cube(path)
+    npath = splitext(path)[1] * ".nc"
+    fl32 = map(x -> ismissing(x) ? x : Float32(x), c)
+    fl32.properties["_FillValue"] *= 1.0f0
+    savecube(fl32, npath; compress=5)
+end
+=#
