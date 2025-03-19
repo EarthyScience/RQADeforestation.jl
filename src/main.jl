@@ -134,11 +134,6 @@ function main(;
                     rethrow(e)
                 end
             end
-            #=@everywhere begin
-                fname = "$(VERSION)_$(getpid())_$(time_ns()).heapsnapshot"
-                Profile.take_heap_snapshot(fname;streaming=true)
-            end
-            =#
             touch(path * ".done")
         end
     end

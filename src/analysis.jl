@@ -1,6 +1,7 @@
 using RecurrenceAnalysis: RecurrenceAnalysis as RA
-#using MultipleTesting
 using Distances
+import RecurrenceAnalysis: tau_recurrence
+
 """
 countvalid(xout, xin)
 
@@ -12,21 +13,41 @@ function countvalid(xout, xin)
 end
 
 """
-countvalidag(xout, xin)
-
-    Inner function to count the valid time steps in a datacube.
-    This function is aimed to be used inside of a mapCube call.
-"""
-function countvalidint(xout, xin)
-    xout .= count(x -> x != -9999, xin)
-end
-"""
 countvalid(cube)
 
     Outer function to count the number of valid time steps in a cube.
 """
-countvalid(cube; path=tempname() * ".zarr") = mapCube(countvalid, cube; indims=InDims("Time"), outdims=OutDims(; path))
+countvalid(cube; path=tempname() * ".zarr") = mapCube(countvalid, cube; indims=InDims("Time", filter=YAXArrays.DAT.NoFilter()), outdims=OutDims(; path))
 
+@testitem "countvalid cube" begin
+    using RQADeforestation
+    using YAXArrays
+    using Dates
+    using DimensionalData: Ti, X, Y
+    using Statistics
+    import Random
+    using Missings
+    Random.seed!(1234)
+
+    mock_axes = (
+        Ti(Date("2022-01-01"):Day(1):Date("2022-01-30")),
+        X(range(1, 10, length=10)),
+        Y(range(1, 5, length=15)),
+    )
+    mock_data = allowmissing(rand(30, 10, 15))
+    mock_data[1:10,1,1] .= missing
+    mock_data[:, 2,1] .= missing
+    mock_data[[1,5,9], 2,2] .= missing
+    mock_props = Dict()
+    mock_cube = YAXArray(mock_axes, mock_data, mock_props)
+
+    mock_count = RQADeforestation.countvalid(mock_cube)
+    @test mock_count.axes == (mock_cube.X, mock_cube.Y)
+    @test mock_count[1,1] == 20
+    @test mock_count[1,2] == 30
+    @test mock_count[2,2] == 27
+    @test mock_count[2,1] == 0
+end
 
 """
 rqatrend(xout, xin, thresh)
@@ -35,9 +56,7 @@ Compute the RQA trend metric for the non-missing time steps of xin, and save it 
 `thresh` specifies the epsilon threshold of the Recurrence Plot computation
 """
 function rqatrend_recurrenceanalysis(pix_trend, pix, thresh=2)
-    #replace!(pix, -9999 => missing)
     ts = collect(skipmissing(pix))
-    #@show length(ts)
     tau_pix = tau_recurrence(ts, thresh)
     pix_trend .= RA._trend(tau_pix)
 end
@@ -49,6 +68,7 @@ function rqatrend_matrix(pix_trend, pix, thresh=2)
     pix_trend .= RA.trend(rm)
 end
 
+#=
 """
     rqatrend_shuffle(cube; thresh=2, path=tempname() * ".zarr", numshuffle=300)
 Compute the RQA trend metric for shuffled time series of the data cube `cube` with the epsilon threshold `thresh` for `numshuffle` tries and save it into `path`.
@@ -58,24 +78,8 @@ function rqatrend_shuffle(cube; thresh=2, path=tempname() * ".zarr", numshuffle=
     # TODO this looks completely broken
     sg = surrogenerator(collect(eachindex(water[overlap])), BlockShuffle(7, shift=true))
 end
+=#
 
-
-import RecurrenceAnalysis: tau_recurrence
-
-function tau_recurrence(ts::AbstractVector, thresh, metric=Euclidean())
-    n = length(ts)
-    rr_τ = zeros(n)
-    for col in 1:n
-        for row in 1:(col-1)
-            d = evaluate(metric, ts[col], ts[row])
-            #@show row, col, d
-            rr_τ[col-row+1] += d <= thresh
-        end
-    end
-    rr_τ[1] = n
-    rr_τ ./ (n:-1:1)
-    #rr_τ
-end
 
 """
     anti_diagonal_density(ts, thresh, metric)
@@ -110,6 +114,4 @@ function inner_postprocessing(rqadata, forestmask; threshold=-1.28, clustersize=
             x
         end
     end
-    #@time labeldata = MultipleTesting.label_components(rqathresh,trues(3,3))
-    #@time clusterdata = MultipleTesting.maskcluster(rqathresh, labeldata, clustersize)
 end
