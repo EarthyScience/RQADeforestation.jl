@@ -241,25 +241,6 @@ end
 end
 
 
-"""
-agcube(filenames)
-   Open the underlying tiff files via ArchGDAL.
-   This opens all files and keeps them open.
-   This has a higher upfront cost, but might lead to a speedup down the line when we access the data.
-"""
-function agcube(filenames::AbstractVector{<:AbstractString})
-    dates = RQADeforestation.getdate.(filenames)
-    # Sort the dates and files by DateTime
-    p = sortperm(dates)
-    sdates = dates[p]
-    sfiles = filenames[p]
-    taxis = Ti(sdates)
-    datasets = AG.readraster.(sfiles)
-    yaxlist = YAXArray.(datasets)
-    return concatenatecubes(yaxlist, taxis)
-end
-
-
 const equi7crs = Dict(
     "AF" => ProjString("+proj=aeqd +lat_0=8.5 +lon_0=21.5 +x_0=5621452.01998 +y_0=5990638.42298 +datum=WGS84 +units=m +no_defs"),
     "AN" => ProjString("+proj=aeqd +lat_0=-90 +lon_0=0 +x_0=3714266.97719 +y_0=3402016.50625 +datum=WGS84 +units=m +no_defs"),
