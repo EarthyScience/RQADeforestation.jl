@@ -15,6 +15,7 @@ include("metrics.jl")
 include("auxil.jl")
 include("rqatrend.jl")
 include("analysis.jl")  # TODO what is still needed from analysis now that rqatrend is in its own file?
+include("cluster.jl")
 include("timestats.jl")
 include("main.jl")
 
