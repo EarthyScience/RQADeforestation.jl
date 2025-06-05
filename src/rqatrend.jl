@@ -117,7 +117,7 @@ function tau_rr(y, d; thresh=2, metric=CheckedEuclidean())
         nominator = 0
         denominator = 0
         @inbounds for i in 1:length(y)-d
-            if y[i] === missing || y[i+d] === missing
+            if y[i] === missing || y[i+d] === missing|| isnan(y[i]) || isnan(y[i+d])
                 continue
             end
             nominator += evaluate(metric, y[i], y[i+d]) <= _thresh
