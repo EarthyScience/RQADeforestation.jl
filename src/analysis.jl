@@ -35,9 +35,9 @@ countvalid(cube; path=tempname() * ".zarr") = mapCube(countvalid, cube; indims=I
         Y(range(1, 5, length=15)),
     )
     mock_data = allowmissing(rand(30, 10, 15))
-    mock_data[1:10,1,1] .= missing
-    mock_data[:, 2,1] .= missing
-    mock_data[[1,5,9], 2,2] .= missing
+    mock_data[1:10, 1, 1] .= missing
+    mock_data[:, 2, 1] .= missing
+    mock_data[[1, 5, 9], 2, 2] .= missing
     mock_props = Dict()
     mock_cube = YAXArray(mock_axes, mock_data, mock_props)
 
