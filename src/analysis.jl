@@ -67,17 +67,3 @@ function rqatrend_matrix(pix_trend, pix, thresh=2)
     rm = RecurrenceMatrix(ts, thresh)
     pix_trend .= RA.trend(rm)
 end
-
-"""
-Compute the forest masking thresholding and clustering of the rqadata in one step
-"""
-function inner_postprocessing(rqadata, forestmask; threshold=-1.28, clustersize=30)
-    @time rqamasked = rqadata .* forestmask
-    @time rqathresh = map(rqamasked) do x
-        if !ismissing(x)
-            x > threshold ? zero(Float32) : one(Float32)
-        else
-            x
-        end
-    end
-end
