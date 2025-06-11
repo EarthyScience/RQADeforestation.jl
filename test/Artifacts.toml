@@ -2,5 +2,5 @@
 git-tree-sha1 = "1dc9d7aa975de4f5ecc652f34d6bbee706fcb7bd"
 
     [[rqatestdata.download]]
-    url = "https://github.com/meggart/RQADeforestationTestData/archive/refs/tags/v2.0.tar.gz"
+    url = "https://github.com/EarthyScience/RQADeforestationTestData/archive/refs/tags/v2.0.tar.gz"
     sha256 = "38a3e66a0505ed9d22c6e065627039089a421b0b143ac4c8d78aac45dd3dd497"
