@@ -43,20 +43,8 @@ countvalid(cube; path=tempname() * ".zarr") = mapCube(countvalid, cube; indims=I
 
     mock_count = RQADeforestation.countvalid(mock_cube)
     @test mock_count.axes == (mock_cube.X, mock_cube.Y)
-    @test mock_count[1,1] == 20
-    @test mock_count[1,2] == 30
-    @test mock_count[2,2] == 27
-    @test mock_count[2,1] == 0
-end
-
-"""
-rqatrend(xout, xin, thresh)
-
-Compute the RQA trend metric for the non-missing time steps of xin, and save it to xout. 
-`thresh` specifies the epsilon threshold of the Recurrence Plot computation
-"""
-function rqatrend_recurrenceanalysis(pix_trend, pix, thresh=2)
-    ts = collect(skipmissing(pix))
-    tau_pix = tau_recurrence(ts, thresh)
-    pix_trend .= RA._trend(tau_pix)
+    @test mock_count[1, 1] == 20
+    @test mock_count[1, 2] == 30
+    @test mock_count[2, 2] == 27
+    @test mock_count[2, 1] == 0
 end
