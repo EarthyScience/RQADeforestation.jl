@@ -68,40 +68,6 @@ function rqatrend_matrix(pix_trend, pix, thresh=2)
     pix_trend .= RA.trend(rm)
 end
 
-#=
-"""
-    rqatrend_shuffle(cube; thresh=2, path=tempname() * ".zarr", numshuffle=300)
-Compute the RQA trend metric for shuffled time series of the data cube `cube` with the epsilon threshold `thresh` for `numshuffle` tries and save it into `path`.
-"""
-function rqatrend_shuffle(cube; thresh=2, path=tempname() * ".zarr", numshuffle=300)
-    # This should be made a random shuffle
-    # TODO this looks completely broken
-    sg = surrogenerator(collect(eachindex(water[overlap])), BlockShuffle(7, shift=true))
-end
-=#
-
-
-"""
-    anti_diagonal_density(ts, thresh, metric)
-Compute the average density of the diagonals perpendicular to the main diagonal for data series `ts`.
-Uses the threshold `thresh` and `metric` for the computation of the similarities.
-"""
-function anti_diagonal_density(ts::AbstractVector, thresh, metric=Euclidean())
-    n = length(ts)
-    ad_densities = zeros(2 * n - 3)
-    for col in 1:n
-        for row in 1:(col-1)
-            d = evaluate(metric, ts[col], ts[row])
-            #@show row, col, d
-            ad_densities[col+row-2] += d <= thresh
-        end
-    end
-    half = div(n, 2)
-    maxdensities = collect(Iterators.flatten([(n, n) for n in 1:half-1]))
-    diagonallengths = [maxdensities..., half, reverse(maxdensities)...]
-    ad_densities ./ diagonallengths
-end
-
 """
 Compute the forest masking thresholding and clustering of the rqadata in one step
 """
