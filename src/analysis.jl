@@ -60,10 +60,3 @@ function rqatrend_recurrenceanalysis(pix_trend, pix, thresh=2)
     tau_pix = tau_recurrence(ts, thresh)
     pix_trend .= RA._trend(tau_pix)
 end
-
-function rqatrend_matrix(pix_trend, pix, thresh=2)
-    #replace!(pix, -9999 => missing)
-    ts = collect(skipmissing(pix))
-    rm = RecurrenceMatrix(ts, thresh)
-    pix_trend .= RA.trend(rm)
-end
