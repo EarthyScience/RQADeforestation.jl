@@ -33,7 +33,7 @@ function DiskArrays.readblock!(a::LazyAggDiskArray, aout, i::UnitRange{Int}...)
     buf = zeros(eltype(first(a.arrays)), length(i1), length(i2), max_n_array)
     for (j, it) in enumerate(itime)
         arrays_now = a.arrays[a.inds[it]]
-        for ia in 1:length(arrays_now)
+        for ia in eachindex(arrays_now)
             DiskArrays.readblock!(arrays_now[ia], view(buf, :, :, ia), i1, i2)
         end
         vbuf = view(buf, :, :, 1:length(arrays_now))
@@ -103,7 +103,7 @@ function grouptimes(times, timediff=200000)
     group = [1]
     groups = [group]
 
-    for i in 2:length(times)
+    for i in eachindex(times)[2:end]
         t = times[i]
         period = t - times[group[end]]
         if period.value < timediff
@@ -123,7 +123,7 @@ function stackindices(times, timediff=200000)
     group = 1
     groups[1] = group
 
-    for i in 2:length(times)
+    for i in eachindex(times)[2:end]
         period = times[i] - times[i-1]
         if period.value < timediff
             groups[i] = group
