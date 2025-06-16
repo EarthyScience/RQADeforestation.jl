@@ -1,4 +1,4 @@
-using YAXArrayBase:  backendlist, get_var_handle
+using YAXArrayBase: backendlist, get_var_handle
 using DiskArrayTools
 using DiskArrays: DiskArrays, GridChunks
 using DiskArrayEngine: DiskArrayEngine as DAE
@@ -17,27 +17,27 @@ struct LazyAggDiskArray{T,F,A} <: AbstractDiskArray{T,3}
     inds::IrregularChunks
     s::Tuple{Int,Int,Int}
 end
-function LazyAggDiskArray(f,arrays,groups)
-    allequal(size,arrays) || error("All Arrays must have same size")
-    allequal(eltype,arrays) || error("All Arrays must have same element type")
-    inds = IrregularChunks(;chunksizes=last(rle(groups)))
-    s = (size(first(arrays))...,length(inds))
-    T = Base.promote_op(f,Vector{eltype(first(arrays))})
-    LazyAggDiskArray{T,typeof(f),typeof(arrays)}(f,arrays,inds,s)
+function LazyAggDiskArray(f, arrays, groups)
+    allequal(size, arrays) || error("All Arrays must have same size")
+    allequal(eltype, arrays) || error("All Arrays must have same element type")
+    inds = IrregularChunks(; chunksizes=last(rle(groups)))
+    s = (size(first(arrays))..., length(inds))
+    T = Base.promote_op(f, Vector{eltype(first(arrays))})
+    LazyAggDiskArray{T,typeof(f),typeof(arrays)}(f, arrays, inds, s)
 end
 Base.size(a::LazyAggDiskArray) = a.s
 DiskArrays.haschunks(a::LazyAggDiskArray) = DiskArrays.haschunks(first(a.arrays))
-function DiskArrays.readblock!(a::LazyAggDiskArray,aout,i::UnitRange{Int}...)
-    i1,i2,itime = i
-    max_n_array = maximum(it->length(a.inds[it]),itime)
-    buf = zeros(eltype(first(a.arrays)),length(i1),length(i2),max_n_array)
+function DiskArrays.readblock!(a::LazyAggDiskArray, aout, i::UnitRange{Int}...)
+    i1, i2, itime = i
+    max_n_array = maximum(it -> length(a.inds[it]), itime)
+    buf = zeros(eltype(first(a.arrays)), length(i1), length(i2), max_n_array)
     for (j, it) in enumerate(itime)
         arrays_now = a.arrays[a.inds[it]]
         for ia in 1:length(arrays_now)
-            DiskArrays.readblock!(arrays_now[ia],view(buf,:,:,ia),i1,i2)
+            DiskArrays.readblock!(arrays_now[ia], view(buf, :, :, ia), i1, i2)
         end
-        vbuf = view(buf,:,:,1:length(arrays_now))
-        map!(a.f,view(aout,:,:,j),eachslice(vbuf,dims=(1,2)))
+        vbuf = view(buf, :, :, 1:length(arrays_now))
+        map!(a.f, view(aout, :, :, j), eachslice(vbuf, dims=(1, 2)))
     end
 end
 
@@ -76,8 +76,8 @@ end
 
 @testitem "getdate" begin
     using Dates
-    @test RQADeforestation.getdate("sometext20200919T202020_somemoretext1234") == DateTime(2020,9,19, 20,20,20)
-    @test_throws  Exception RQADeforestation.getdate("sometext")
+    @test RQADeforestation.getdate("sometext20200919T202020_somemoretext1234") == DateTime(2020, 9, 19, 20, 20, 20)
+    @test_throws Exception RQADeforestation.getdate("sometext")
 end
 
 """
@@ -128,7 +128,7 @@ function stackindices(times, timediff=200000)
         if period.value < timediff
             groups[i] = group
         else
-            group += 1 
+            group += 1
             groups[i] = group
         end
     end
@@ -166,61 +166,61 @@ function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:dae)
     #@show sdates
     # Put the dates which are 200 seconds apart into groups
     if stackgroups in [:dae, :lazyagg]
-    groupinds = grouptimes(sdates, 200000)
-    onefile = first(sfiles)
-    gd = backendlist[:gdal]
-    yax1 = gd(onefile)
-    #gdb = yax1["Gray"]
-    #onecube = Cube(onefile)
-    #@show onecube.axes
-    gdb = get_var_handle(yax1, "Gray")
-    gdbband = gdb.band
-    gdbsize = gdb.size
-    gdbattrs = gdb.attrs
-    gdbcs = gdb.cs
-    group_gdbs = map(sfiles) do f
+        groupinds = grouptimes(sdates, 200000)
+        onefile = first(sfiles)
+        gd = backendlist[:gdal]
+        yax1 = gd(onefile)
+        #gdb = yax1["Gray"]
+        #onecube = Cube(onefile)
+        #@show onecube.axes
+        gdb = get_var_handle(yax1, "Gray")
+        gdbband = gdb.band
+        gdbsize = gdb.size
+        gdbattrs = gdb.attrs
+        gdbcs = gdb.cs
+        group_gdbs = map(sfiles) do f
             BufferGDALBand{eltype(gdb)}(f, gdbband, gdbsize, gdbattrs, gdbcs, Dict{Int,AG.IRasterBand}())
-    end
+        end
 
-    cubelist = CFDiskArray.(group_gdbs, (gdbattrs,))
-    stackinds = stackindices(sdates)
-    aggdata = if stackgroups == :dae
-        gcube = diskstack(cubelist)
-        aggdata = DAE.aggregate_diskarray(gcube, mean ∘ skipmissing, (3=> stackinds,); strategy=:direct)
+        cubelist = CFDiskArray.(group_gdbs, (gdbattrs,))
+        stackinds = stackindices(sdates)
+        aggdata = if stackgroups == :dae
+            gcube = diskstack(cubelist)
+            aggdata = DAE.aggregate_diskarray(gcube, mean ∘ skipmissing, (3 => stackinds,); strategy=:direct)
+        else
+            println("Construct lazy diskarray")
+            LazyAggDiskArray(mean ∘ skipmissing, cubelist, stackinds)
+        end
+        #    data = DiskArrays.ConcatDiskArray(reshape(groupcubes, (1,1,length(groupcubes))))
+        dates_grouped = [sdates[group[begin]] for group in groupinds]
+
+        taxis = DD.Ti(dates_grouped)
+        gcube = Cube(sfiles[1])
+        return YAXArray((DD.dims(gcube)[1:2]..., taxis), aggdata, gcube.properties,)
     else
-        println("Construct lazy diskarray")
-        LazyAggDiskArray(mean ∘ skipmissing, cubelist, stackinds)
-    end
-#    data = DiskArrays.ConcatDiskArray(reshape(groupcubes, (1,1,length(groupcubes))))
-    dates_grouped = [sdates[group[begin]] for group in groupinds]
+        #datasets = AG.readraster.(sfiles)
+        taxis = DD.Ti(sdates)
 
-    taxis = DD.Ti(dates_grouped)
-    gcube = Cube(sfiles[1])
-    return YAXArray((DD.dims(gcube)[1:2]..., taxis), aggdata, gcube.properties,)    
-else
-    #datasets = AG.readraster.(sfiles)
-    taxis = DD.Ti(sdates)
+        onefile = first(sfiles)
+        gd = backendlist[:gdal]
+        yax1 = gd(onefile)
+        onecube = Cube(onefile)
+        #@show onecube.axes
+        gdb = get_var_handle(yax1, "Gray")
 
-    onefile = first(sfiles)
-    gd = backendlist[:gdal]
-    yax1 = gd(onefile)
-    onecube = Cube(onefile)
-    #@show onecube.axes
-    gdb = get_var_handle(yax1, "Gray")
-
-    #@assert gdb isa GDALBand
-    all_gdbs = map(sfiles) do f
-        BufferGDALBand{eltype(gdb)}(f, gdb.band, gdb.size, gdb.attrs, gdb.cs, Dict{Int,AG.IRasterBand}())
+        #@assert gdb isa GDALBand
+        all_gdbs = map(sfiles) do f
+            BufferGDALBand{eltype(gdb)}(f, gdb.band, gdb.size, gdb.attrs, gdb.cs, Dict{Int,AG.IRasterBand}())
+        end
+        stacked_gdbs = diskstack(all_gdbs)
+        attrs = copy(gdb.attrs)
+        #attrs["add_offset"] = Float16(attrs["add_offset"])
+        if haskey(attrs, "scale_factor")
+            attrs["scale_factor"] = Float16(attrs["scale_factor"])
+        end
+        all_cfs = CFDiskArray(stacked_gdbs, attrs)
+        return YAXArray((onecube.axes..., taxis), all_cfs, onecube.properties)
     end
-    stacked_gdbs = diskstack(all_gdbs)
-    attrs = copy(gdb.attrs)
-    #attrs["add_offset"] = Float16(attrs["add_offset"])
-    if haskey(attrs, "scale_factor")
-        attrs["scale_factor"] = Float16(attrs["scale_factor"])
-    end
-    all_cfs = CFDiskArray(stacked_gdbs, attrs)
-    return YAXArray((onecube.axes..., taxis), all_cfs, onecube.properties)
-end
     #datasetgroups = [datasets[group] for group in groupinds]
     #We have to save the vrts because the usage of nested vrts is not working as a rasterdataset
     #temp = tempdir()
