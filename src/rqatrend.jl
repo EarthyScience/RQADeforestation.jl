@@ -57,7 +57,7 @@ function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEucli
     # simplified implementation of https://stats.stackexchange.com/a/370175 and https://github.com/joshday/OnlineStats.jl/blob/b89a99679b13e3047ff9c93a03c303c357931832/src/stats/linreg.jl
     # x is the diagonal offset, y the percentage of local recurrence
     # we compute the slope of a simple linear regression with bias from x to y
-    xs = 1+theiler : length(data)-border
+    xs = 1+theiler:length(data)-border
     x_mean = mean(xs)
     xx_mean = sqmean_step1_range(xs) # mean(x*x for x in xs)
 
@@ -70,18 +70,18 @@ function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEucli
         n += 1.0
         y = tau_rr(data, x; thresh, metric)
         y_mean = smooth(y_mean, y, inv(n))
-        xy_mean = smooth(xy_mean, x*y, inv(n))
+        xy_mean = smooth(xy_mean, x * y, inv(n))
     end
-    A = SA_F64[ 
+    A = SA_F64[
         xx_mean x_mean
-        x_mean  1.0
+        x_mean 1.0
     ]
     b = SA_F64[xy_mean, y_mean]
     # OnlineStats uses `Symmetric(A) \ b`, however this does not work for StaticArrays
     # `cholesky(A) \ b` is recommended instead at discourse https://discourse.julialang.org/t/staticarrays-solve-symmetric-linear-system-seems-typeinstable/124634
     # some timings show that there is no significant speedup when adding cholesky or doing plain static linear regression
     # hence leaving it out for now
-    return 1000.0*(A \ b)[1]  # slope
+    return 1000.0 * (A\b)[1]  # slope
 end
 
 
@@ -123,7 +123,7 @@ function tau_rr(y, d; thresh=2, metric=CheckedEuclidean())
             nominator += evaluate(metric, y[i], y[i+d]) <= _thresh
             denominator += 1
         end
-        return nominator/denominator
+        return nominator / denominator
     end
 end
 
@@ -135,7 +135,7 @@ function sqmean_step1_range(xs)
 end
 
 # assumes n is Int for optimal performance
-sumofsquares(n) = n*(n+1)*(2*n+1)/6
+sumofsquares(n) = n * (n + 1) * (2 * n + 1) / 6
 
 """
     smooth(a, b, γ)
