@@ -8,7 +8,6 @@ using Distances
 Compute the RQA trend metric for the datacube `cube` with the epsilon threshold `thresh`.
 """
 function rqatrend(cube; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...)
-    @show outpath
     mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=Float32, path=outpath, overwrite, kwargs...))
 end
 
@@ -84,7 +83,6 @@ function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEucli
     return 1000.0 * (A\b)[1]  # slope
 end
 
-
 @testitem "rqatrend_impl" begin
     import AllocCheck
     import Random
@@ -103,6 +101,64 @@ end
     @test isapprox(RQADeforestation.rqatrend_impl(y2; thresh=0.5), -0.11069045524336744)
     @test isempty(AllocCheck.check_allocs(RQADeforestation.rqatrend_impl, Tuple{Vector{Union{Float64,Missing}}}))
 end
+
+function rqatrend_weightedonline(data, timeaxis; thresh=2, border=10, theiler=1, metric=CheckedEuclidean())
+    # simplified implementation of https://stats.stackexchange.com/a/370175 and https://github.com/joshday/OnlineStats.jl/blob/b89a99679b13e3047ff9c93a03c303c357931832/src/stats/linreg.jl
+    # x is the diagonal offset, y the percentage of local recurrence
+    # we compute the slope of a simple linear regression with bias from x to y
+    maxnum = last(timeaxis) - first(timeaxis)
+    start = 1
+    finish = length(data) - border
+    wf = WeightedFit()
+    for i in start:finish
+        data[i] === missing && continue
+        for j in i+theiler:finish
+            data[j] === missing && continue
+            y = Float64(evaluate(metric, data[i], data[j]) <= thresh)
+
+            x = Float64(timeaxis[j] - timeaxis[i])
+            weight = 1 / (maxnum - x)
+            wf = smoowthwlinfit(x, y, weight, wf)
+        end
+    end
+    b = finalizewlinreg(wf)[2]
+    return 1000.0 * b
+end
+
+@testitem "Weighted RQATrend with x values" begin
+    using RQADeforestation
+    using Distributions
+    using RecurrenceAnalysis
+    using Random, Test
+    Random.seed!(1234)
+    x = 1:200
+    noise = rand(Normal(0, 1), 200)
+    y1 = 2.0 .* sin.(x ./ 10) .+ noise
+    y2 = copy(noise)
+    y2[101:200] .-= 2
+
+    # rp1 = RecurrenceMatrix(y1, 0.2)
+    # rp2 = RecurrenceMatrix(y2, 0.2)
+    theiler = 1
+    border = 10
+
+    rqarange = (1+theiler):(200-border)
+
+    r1 = RQADeforestation.rqatrend_weightedonline(y2, x)
+    @test r1 == -2.66417434040921
+
+    # Add some missings
+    y2mis = collect(Union{Missing,Float64}, y2)
+    y2mis[10:20] .= missing
+    goodinds = (!ismissing).(y2mis)
+
+    r1miss = RQADeforestation.rqatrend_weightedonline(y2mis[goodinds], range(0, 1, length=length(y2mis))[goodinds])
+    r2miss = RQADeforestation.rqatrend_weightedonline(y2mis, range(0, 1, length=length(y2mis)))
+    @test r1miss == r2miss == -514.9110636319965
+end
+
+
+
 
 
 function tau_rr(y, d; thresh=2, metric=CheckedEuclidean())
@@ -137,11 +193,4 @@ end
 # assumes n is Int for optimal performance
 sumofsquares(n) = n * (n + 1) * (2 * n + 1) / 6
 
-"""
-    smooth(a, b, γ)
 
-Weighted average of `a` and `b` with weight `γ`.
-
-``(1 - γ) * a + γ * b``
-"""
-smooth(a, b, γ) = a + γ * (b - a)
