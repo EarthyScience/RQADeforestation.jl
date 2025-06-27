@@ -61,6 +61,7 @@ GDAL = "1"
 GeoFormatTypes = "0.4"
 Glob = "1"
 KML = "0.2"
+Libdl = "1.11.0"
 LinearAlgebra = "1.10"
 LoggingExtras = "1"
 Missings = "1"
@@ -96,6 +97,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StaticTools = "86c06d3c-3f03-46de-9781-57580aa96d0a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
+Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 
 [targets]
-test = ["Test", "TestItemRunner", "Pkg", "Random", "AllocCheck", "BenchmarkTools", "Aqua", "Documenter", "StaticTools", "PythonCall"]
+test = ["Test", "TestItemRunner", "Pkg", "Random", "AllocCheck", "BenchmarkTools", "Aqua", "Documenter", "StaticTools", "PythonCall", "Libdl"]
