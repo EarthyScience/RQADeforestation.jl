@@ -1,0 +1,23 @@
+FROM julia:1.10
+
+# installing C dependencies to build julia using StaticCompiler.jl
+# adapted from stackoverflow https://askubuntu.com/a/1512328
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \ 
+    apt -y update && apt -y install build-essential gcc libc-dev
+
+# Set work directory
+WORKDIR /app
+# Copy project files
+COPY . .
+# work inside staticcompiler subfolder
+WORKDIR /app/staticcompiler 
+# Precompile packages
+
+RUN --mount=type=cache,target=/root/.julia \
+    julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
+RUN --mount=type=cache,target=/root/.julia \
+    julia --project=. staticcompile_rqatrend.jl
+
+# Run the static compiler script in CMD mode so that we can mount storage for output
+# CMD ["julia", "--project=.", "staticcompile_rqatrend.jl"]
