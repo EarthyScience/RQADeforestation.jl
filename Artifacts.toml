@@ -1,5 +1,11 @@
+# all entries marked with `lazy = true` won't be downloaded on package installation
+# the rest will be downloaded
+# hence we can simply mark all test dependencies as lazy = true and have a single Artifacts.toml for everything
+
 [rqatestdata]
 git-tree-sha1 = "1dc9d7aa975de4f5ecc652f34d6bbee706fcb7bd"
+# mark all test Artifacts as lazy
+lazy = true
 
     [[rqatestdata.download]]
     url = "https://github.com/EarthyScience/RQADeforestationTestData/archive/refs/tags/v2.0.tar.gz"

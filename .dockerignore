@@ -1,0 +1,17 @@
+packagecompiler/app
+packagecompiler/app.*
+.github
+.vscode
+.CondaPkg
+docs
+test
+tmp
+**/tmp
+AUTHORS
+codemeta.json
+Dockerfile
+Dockerfile.*
+LICENSE
+README.md
+staticcompiler/lib
+staticcompiler/lib.*

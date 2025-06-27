@@ -1,5 +1,23 @@
+# just configurations
+# setting tempdir to local path makes julia macro artifact"..." work
+set tempdir := "./tmp"
+
+# global variables
+docker_image_name := "rqatest"
+
 default:
   just --list
+
+init:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    # setup pre-commit hooks via pythons uv tooling manager
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    source ~/.local/bin/env
+    uv tool install pre-commit
+    uvx pre-commit install
+    # the julia formatting hook needs JuliaFormatter installed globally
+    julia -e 'import Pkg; Pkg.add("JuliaFormatter")'
 
 # create precompile statements used for `just packagecompile`
 precompilestatements:
@@ -9,11 +27,11 @@ precompilestatements:
 packagecompile:
     #!/usr/bin/env -S julia --project=packagecompiler
     using PackageCompiler
-    if isdir("packagecompiler/app") 
+    if isdir("packagecompiler/app")
         rm("packagecompiler/app.backup", recursive=true, force=true)
         mv("packagecompiler/app", "packagecompiler/app.backup")
     end
-    PackageCompiler.create_app(".", "packagecompiler/app"; 
+    PackageCompiler.create_app(".", "packagecompiler/app";
         precompile_statements_file="packagecompiler/precompile_statements.jl",
         # see https://github.com/JuliaLang/PackageCompiler.jl/issues/994
         include_lazy_artifacts=true,
@@ -23,19 +41,50 @@ packagecompile:
     # lets have an easy check whether this actually worked
     touch("packagecompiler/app/done")
 
-# test the app `packagecompiler/app/RQADeforestation` with testdata, writing data to `test/tmp/apptestdata`
-testapp:
+# downloads the Artifact test data to tmp/apptestdata
+download-test-data $tmpdir="tmp/apptestdata":
+    #!/usr/bin/env -S julia --project
+    import Pkg: Artifacts.@artifact_str
+    testdatapath = artifact"rqatestdata/RQADeforestationTestData-2.0"
+    testdir = ENV["tmpdir"]
+    rm(testdir, recursive=true, force=true)
+    mkpath(testdir)
+    cp(testdatapath, joinpath(testdir, "in"))
+
+# test the app `packagecompiler/app/RQADeforestation` with testdata, writing data to `tmp/apptestdata`
+test-app $tmpdir="tmp/apptestdata": (download-test-data tmpdir)
     #!/usr/bin/env bash
-    cd test
-    indir="tmp/apptestdata/in"
-    outdir="tmp/apptestdata/out.zarr"
-    julia --project -e '
-        import Pkg: Artifacts.@artifact_str, ensure_artifact_installed
-        ensure_artifact_installed("rqatestdata", "Artifacts.toml")
-        testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-1.0")
-        testdir = dirname(ARGS[1])
-        rm(testdir, recursive=true, force=true)
-        mkpath(testdir)
-        cp(testdatapath, ARGS[1])
-    ' -- "$indir"
-    ../packagecompiler/app/bin/RQADeforestation --tile E051N018T3 --continent EU --in-dir "$indir" --out-dir "$outdir"
+    set -euxo pipefail
+    indir="$tmpdir/in"
+    outdir="$tmpdir/out.zarr"
+    ./packagecompiler/app/bin/RQADeforestation --tile E051N018T3 --continent EU --start-date "2021-01-01" --end-date "2022-01-01" --in-dir "$indir" --out-dir "$outdir"
+
+# builds the standard docker
+build-docker:
+    docker build -t "{{docker_image_name}}" -f Dockerfile .
+
+# tests the build docker image using the Artifact test data, writing data to `tmp/apptestdata`
+test-docker $tmpdir="tmp/apptestdata": (download-test-data tmpdir)
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    indir="$tmpdir/in"
+    outdir="$tmpdir/out.zarr"
+    docker run --user $(id -u):$(id -g) --rm -v "$PWD/$tmpdir":"/$tmpdir" "{{docker_image_name}}" --tile E051N018T3 --continent EU --start-date "2021-01-01" --end-date "2022-01-01" --in-dir "/$indir" --out-dir "/$outdir"
+
+# compiles rqatrend to its own c-library using StaticCompiler.jl
+staticcompile:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    if [ -d staticcompiler/lib ]; then
+        if [ -d staticcompiler/lib.backup ]; then
+            rm -rf staticcompiler/lib.backup
+        fi
+        mv staticcompiler/lib staticcompiler/lib.backup
+    fi
+    # using progress plain is important as staticcompiler.jl
+    # outputs warnings instead of errors if things may not work
+    docker build --progress=plain -t temp-image -f Dockerfile.staticcompiler .
+    docker create --name temp-container temp-image
+    docker cp temp-container:/app/staticcompiler/lib "$PWD/staticcompiler/lib"
+    docker rm temp-container
+    docker rmi temp-image

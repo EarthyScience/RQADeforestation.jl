@@ -1,9 +1,7 @@
 
 @testitem "testdata main" begin
-    import Pkg: Artifacts.@artifact_str, ensure_artifact_installed
-
-    ensure_artifact_installed("rqatestdata", "Artifacts.toml")
-    testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-2.0")
+    import Pkg: Artifacts.@artifact_str
+    testdatapath = artifact"rqatestdata/RQADeforestationTestData-2.0"
 
     testdir = tempname()
     rm(testdir, recursive=true, force=true)
@@ -31,10 +29,8 @@
 end
 
 @testitem "testdata julia_main" begin
-    import Pkg: Artifacts.@artifact_str, ensure_artifact_installed
-
-    ensure_artifact_installed("rqatestdata", "Artifacts.toml")
-    testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-2.0")
+    import Pkg: Artifacts.@artifact_str
+    testdatapath = artifact"rqatestdata/RQADeforestationTestData-2.0"
 
     testdir = tempname()
     rm(testdir, recursive=true, force=true)
