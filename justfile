@@ -13,6 +13,7 @@ init:
     set -euxo pipefail
     # setup pre-commit hooks via pythons uv tooling manager
     curl -LsSf https://astral.sh/uv/install.sh | sh
+    source ~/.local/bin/env
     uv tool install pre-commit
     uvx pre-commit install
     # the julia formatting hook needs JuliaFormatter installed globally
