@@ -18,6 +18,3 @@ RUN --mount=type=cache,target=/root/.julia \
     julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()'
 RUN --mount=type=cache,target=/root/.julia \
     julia --project=. staticcompile_rqatrend.jl
-
-# Run the static compiler script in CMD mode so that we can mount storage for output
-# CMD ["julia", "--project=.", "staticcompile_rqatrend.jl"]

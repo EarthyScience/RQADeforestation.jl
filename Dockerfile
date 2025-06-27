@@ -16,6 +16,7 @@ RUN --mount=type=cache,target=/root/.julia \
 RUN --mount=type=cache,target=/root/.julia \
     just packagecompile
 
+# having precompiled everything we can simply copy the binaries to its slim docker image
 FROM debian:bookworm-slim
 WORKDIR /work
 COPY --from=packagecompiled /repo/packagecompiler/app/bin /usr/bin
