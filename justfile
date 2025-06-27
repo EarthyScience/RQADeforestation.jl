@@ -1,3 +1,8 @@
+# just configurations
+# setting tempdir to local path makes julia macro artifact"..." work
+set tempdir := "./tmp"
+
+# global variables
 docker_image_name := "rqatest"
 
 default:
@@ -27,20 +32,13 @@ packagecompile:
 
 # downloads the Artifact test data to tmp/apptestdata
 download-test-data $tmpdir="tmp/apptestdata":
-    #!/usr/bin/env bash
-    set -euxo pipefail
-    indir="$PWD/$tmpdir/in"
-    cd test
-    julia --project -e '
-        import Pkg: Artifacts.@artifact_str, ensure_artifact_installed
-        ensure_artifact_installed("rqatestdata", "Artifacts.toml")
-        testdatapath = joinpath(artifact"rqatestdata", "RQADeforestationTestData-2.0")
-        testdir = dirname(ARGS[1])
-        rm(testdir, recursive=true, force=true)
-        mkpath(testdir)
-        cp(testdatapath, ARGS[1])
-    ' -- "$indir"
-    
+    #!/usr/bin/env -S julia --project
+    import Pkg: Artifacts.@artifact_str
+    testdatapath = artifact"rqatestdata/RQADeforestationTestData-2.0"
+    testdir = ENV["tmpdir"]
+    rm(testdir, recursive=true, force=true)
+    mkpath(testdir)
+    cp(testdatapath, joinpath(testdir, "in"))    
     
 # test the app `packagecompiler/app/RQADeforestation` with testdata, writing data to `tmp/apptestdata`
 test-app $tmpdir="tmp/apptestdata": (download-test-data tmpdir)
