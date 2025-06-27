@@ -8,6 +8,16 @@ docker_image_name := "rqatest"
 default:
   just --list
 
+init:
+    #!/usr/bin/env bash
+    set -euxo pipefail
+    # setup pre-commit hooks via pythons uv tooling manager
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    uv tool install pre-commit
+    uvx pre-commit install
+    # the julia formatting hook needs JuliaFormatter installed globally
+    julia -e 'import Pkg; Pkg.add("JuliaFormatter")'
+
 # create precompile statements used for `just packagecompile`
 precompilestatements:
     julia --project -e 'import Pkg; Pkg.test(julia_args=`--trace-compile=packagecompiler/precompile_statements.jl`)'
@@ -16,11 +26,11 @@ precompilestatements:
 packagecompile:
     #!/usr/bin/env -S julia --project=packagecompiler
     using PackageCompiler
-    if isdir("packagecompiler/app") 
+    if isdir("packagecompiler/app")
         rm("packagecompiler/app.backup", recursive=true, force=true)
         mv("packagecompiler/app", "packagecompiler/app.backup")
     end
-    PackageCompiler.create_app(".", "packagecompiler/app"; 
+    PackageCompiler.create_app(".", "packagecompiler/app";
         precompile_statements_file="packagecompiler/precompile_statements.jl",
         # see https://github.com/JuliaLang/PackageCompiler.jl/issues/994
         include_lazy_artifacts=true,
@@ -38,8 +48,8 @@ download-test-data $tmpdir="tmp/apptestdata":
     testdir = ENV["tmpdir"]
     rm(testdir, recursive=true, force=true)
     mkpath(testdir)
-    cp(testdatapath, joinpath(testdir, "in"))    
-    
+    cp(testdatapath, joinpath(testdir, "in"))
+
 # test the app `packagecompiler/app/RQADeforestation` with testdata, writing data to `tmp/apptestdata`
 test-app $tmpdir="tmp/apptestdata": (download-test-data tmpdir)
     #!/usr/bin/env bash
@@ -60,7 +70,7 @@ test-docker $tmpdir="tmp/apptestdata": (download-test-data tmpdir)
     outdir="$tmpdir/out.zarr"
     docker run --user $(id -u):$(id -g) --rm -v "$PWD/$tmpdir":"/$tmpdir" "{{docker_image_name}}" --tile E051N018T3 --continent EU --start-date "2021-01-01" --end-date "2022-01-01" --in-dir "/$indir" --out-dir "/$outdir"
 
-# compiles rqatrend to its own c-library using StaticCompiler.jl 
+# compiles rqatrend to its own c-library using StaticCompiler.jl
 staticcompile:
     #!/usr/bin/env bash
     set -euxo pipefail
@@ -70,7 +80,7 @@ staticcompile:
         fi
         mv staticcompiler/lib staticcompiler/lib.backup
     fi
-    # using progress plain is important as staticcompiler.jl 
+    # using progress plain is important as staticcompiler.jl
     # outputs warnings instead of errors if things may not work
     docker build --progress=plain -t temp-image -f Dockerfile.staticcompiler .
     docker create --name temp-container temp-image
