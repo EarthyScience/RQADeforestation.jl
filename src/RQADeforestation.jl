@@ -11,6 +11,7 @@ using TestItems
 
 export gdalcube, rqatrend
 
+include("weightedlinearregression.jl")
 include("metrics.jl")
 include("auxil.jl")
 include("rqatrend.jl")
