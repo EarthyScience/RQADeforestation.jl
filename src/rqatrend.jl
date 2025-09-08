@@ -8,7 +8,7 @@ using Distances
 Compute the RQA trend metric for the datacube `cube` with the epsilon threshold `thresh`.
 """
 function rqatrend(cube; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...)
-    mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=Float32, path=outpath, overwrite, kwargs...))
+    mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=UInt8, path=outpath, overwrite, kwargs...))
 end
 
 @testitem "rqatrend cube" begin
@@ -30,8 +30,8 @@ end
 
     mock_trend = rqatrend(mock_cube; thresh=0.5)
     @test mock_trend.axes == (mock_cube.X, mock_cube.Y)
-    diff = abs(mean(mock_trend))
-    @test diff < 0.5
+    @test eltype(mock_trend) == Union{Missing, UInt8}
+
 end
 
 """rqatrend(path::AbstractString; thresh=2, outpath=tempname()*".zarr")
