@@ -58,11 +58,12 @@ function classify_rqatrend(trend; lowerbound=Float32(-5.0), upperbound=Float32(-
 end
 
 @testitem "classify_rqatrend" begin
+    import AllocCheck
     @test RQADeforestation.classify_rqatrend(-4.999) === UInt8(255)
     @test RQADeforestation.classify_rqatrend(1) === UInt8(0)
     @test RQADeforestation.classify_rqatrend(-0.52) === UInt8(1)
     @test RQADeforestation.classify_rqatrend(-6) === UInt8(255)
-    @test isempty( AllocCheck.check_allocs(RQADeforestation.classify_rqatrend, (Float32, Float32, Float32)))
+    @test isempty( AllocCheck.check_allocs(RQADeforestation.classify_rqatrend, (Float32,)))
 end
 
 function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEuclidean())
