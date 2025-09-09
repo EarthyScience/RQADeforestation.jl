@@ -8,8 +8,7 @@ using Distances
 Compute the RQA trend metric for the datacube `cube` with the epsilon threshold `thresh`.
 """
 function rqatrend(cube; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...)
-    @show outpath
-    mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=Float32, path=outpath, overwrite, kwargs...))
+    mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=UInt8, path=outpath, overwrite, kwargs...))
 end
 
 @testitem "rqatrend cube" begin
@@ -31,8 +30,8 @@ end
 
     mock_trend = rqatrend(mock_cube; thresh=0.5)
     @test mock_trend.axes == (mock_cube.X, mock_cube.Y)
-    diff = abs(mean(mock_trend))
-    @test diff < 0.5
+    @test eltype(mock_trend) == Union{Missing, UInt8}
+
 end
 
 """rqatrend(path::AbstractString; thresh=2, outpath=tempname()*".zarr")
@@ -48,10 +47,24 @@ rqatrend(xout, xin, thresh)
 Compute the RQA trend metric for the non-missing time steps of xin, and save it to xout. 
 `thresh` specifies the epsilon threshold of the Recurrence Plot computation
 """
-function rqatrend(pix_trend, pix, thresh=2)
-    pix_trend .= rqatrend_impl(pix; thresh)
+function rqatrend(pix_trend, pix, thresh=2, lowerbound=-5., upperbound=-0.5)
+    pix_trend .= classify_rqatrend(rqatrend_impl(pix; thresh); lowerbound, upperbound)
 end
 
+function classify_rqatrend(trend; lowerbound=Float32(-5.0), upperbound=Float32(-0.5))
+    ctrend = clamp(trend, lowerbound, upperbound)
+    rlength = upperbound - lowerbound
+    return round(UInt8, 255-((ctrend - lowerbound) / rlength) * 255)    
+end
+
+@testitem "classify_rqatrend" begin
+    import AllocCheck
+    @test RQADeforestation.classify_rqatrend(-4.999) === UInt8(255)
+    @test RQADeforestation.classify_rqatrend(1) === UInt8(0)
+    @test RQADeforestation.classify_rqatrend(-0.52) === UInt8(1)
+    @test RQADeforestation.classify_rqatrend(-6) === UInt8(255)
+    @test isempty( AllocCheck.check_allocs(RQADeforestation.classify_rqatrend, (Float32,)))
+end
 
 function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEuclidean())
     # simplified implementation of https://stats.stackexchange.com/a/370175 and https://github.com/joshday/OnlineStats.jl/blob/b89a99679b13e3047ff9c93a03c303c357931832/src/stats/linreg.jl
@@ -117,7 +130,7 @@ function tau_rr(y, d; thresh=2, metric=CheckedEuclidean())
         nominator = 0
         denominator = 0
         @inbounds for i in 1:length(y)-d
-            if y[i] === missing || y[i+d] === missing
+            if y[i] === missing || y[i+d] === missing|| isnan(y[i]) || isnan(y[i+d])
                 continue
             end
             nominator += evaluate(metric, y[i], y[i+d]) <= _thresh
