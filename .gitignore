@@ -3,7 +3,9 @@
 *.jl.mem
 /docs/Manifest.toml
 /docs/build/
-Manifest.toml
-tmp/
+/Manifest.toml
+tmp
 /packagecompiler/app
-/packagecompiler/app.backup
+*.backup
+.CondaPkg
+.vscode

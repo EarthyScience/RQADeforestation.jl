@@ -8,14 +8,16 @@
 
 This is the Julia package developed within the [FAIRSenDD project](https://github.com/EarthyScience/FAIRSenDD).
 
+The aim of this project is to provide a forest change detection algorithm in Julia. 
+
 ## Citation
 
 F. Cremer, M. Urbazaev, J. Cortés, J. Truckenbrodt, C. Schmullius and C. Thiel, "Potential of Recurrence Metrics from Sentinel-1 Time Series for Deforestation Mapping," in IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing, vol. 13, pp. 5233-5240, 2020, doi: [10.1109/JSTARS.2020.3019333](https://dx.doi.org/10.1109/JSTARS.2020.3019333).
 
 ## Funding
 
-<img src="https://raw.githubusercontent.com/EarthyScience/FAIRSenDD/refs/heads/main/website/content/public/assets/ESA_logo.svg" align="left" height="50px"/>
-<img src="https://raw.githubusercontent.com/EarthyScience/FAIRSenDD/refs/heads/main/website/content/public/assets/ESA_NoR_logo.svg" align="left" height="50px" style="filter: contrast(0);"/>
+<img src="https://github.com/EarthyScience/FAIRSenDD/raw/main/website/docs/public/ESA_logo.svg" align="left" height="50px"/>
+<img src="https://github.com/EarthyScience/FAIRSenDD/raw/main/website/docs/public/ESA_NoR_logo.svg" align="left" height="50px" style="filter: contrast(0);"/>
 
 This project was funded by the European Space Agency in the Science Result Long-Term Availability & Reusability Demonstrator Initiative.
 In addition, this project was supported by the ESA Network of Resources.
