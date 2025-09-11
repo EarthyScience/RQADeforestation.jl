@@ -38,7 +38,8 @@ end
 
 Compute the RQA trend metric for the data that is available on `path`.
 """
-rqatrend(path::AbstractString; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...) = rqatrend(Cube(path); thresh, outpath, overwrite, kwargs...)
+rqatrend(path::AbstractString; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...) = 
+    rqatrend(Cube(path); thresh, outpath, overwrite, kwargs...)
 
 
 """
