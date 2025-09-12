@@ -47,7 +47,7 @@ YAXArrays = "c21b50f5-aa40-41ea-b809-c0f5e47bfa5c"
 Zarr = "0a941bbe-ad1d-11e8-39d9-ab76183a1d99"
 
 [compat]
-AWSS3 = "0.10.4"
+AWSS3 = "0.10.4, 0.11"
 AllocCheck = "0.2.2"
 Aqua = "0.8.13"
 ArchGDAL = "0.10"
