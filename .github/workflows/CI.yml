@@ -24,9 +24,8 @@ jobs:
       matrix:
         version:
           - "1"
-          - "lts"
         os:
-          - self-hosted
+          - ubuntu-latest
         arch:
           - x64
     env:
