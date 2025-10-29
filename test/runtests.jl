@@ -1,3 +1,4 @@
+using LazyArtifacts
 using RQADeforestation
 
 # doctests do not run as testitem as of now, hence it is included here

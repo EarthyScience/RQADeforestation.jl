@@ -1,15 +1,6 @@
 using ArgParse
 using YAXArrays: YAXDefaults
-using ArchGDAL: ArchGDAL
-using PyramidScheme
-using AWSS3: global_aws_config, S3Path
-using FilePathsBase: exists
 
-
-#using YAXArrays, Zarr
-using Minio: MinioConfig
-
-global_aws_config(MinioConfig("http://s3.fairsendd.eodchosting.eu",region="us-east-1"))
 
 const argparsesettings = ArgParseSettings()
 
@@ -78,121 +69,72 @@ function main(;
     tiles::Vector{String},
     continent::String,
     indir::String,
-    outstore=Zarr.S3Store("europe-forest-change"),
-    outdir="results",
-    tempfolder = S3Path(outstore.bucket, "intermediates/"),
+    outdir="out.zarr",
     start_date::Date,
     end_date::Date,
     polarisation="VH",
     orbit="D",
     threshold=3.0,
     folders=["V1M0R1", "V1M1R1", "V1M1R2"],
-    stack=:dae,
-    postprocess=true,
-    forestdir="data/forest20m_new",
-    delete_intermediate=false
+    stack=:dae
 )
-#global_aws_config(MinioConfig("http://s3.fairsendd.eodchosting.eu",region="us-east-1",username="ufew8gJku5hRY7VD6jbEjRi8VnvDfeEv",password="dqZdzWCLB7a9gTshL29AnQWGqL3krwnS"))
     in(orbit, ["A", "D"]) || error("Orbit needs to be either A or D")
     if isdir(indir) && isempty(indir)
         error("Input directory $indir must not be empty")
     end
-    
-    if isdir(tempfolder)
+    if isdir(outdir)
         @warn "Resume from existing output directory"
     else
-        mkdir(tempfolder, recursive=true)
+        mkdir(outdir)
         @info "Write output to $outdir"
     end
+
     if monthday(start_date) != monthday(end_date)
         @warn "Selected time series does not include a multiple of whole years. This might introduce seasonal bias."
     end
 
-    YAXDefaults.workdir[] = tempfolder
-    @show typeof(tempfolder)
+    YAXDefaults.workdir[] = outdir
 
-    corruptedfiles = open("corrupted_tiles.txt", "w")
+    corruptedfiles = "corrupted_tiles.txt"
     # TODO save the corrupt files to a txt for investigation
     for tilefolder in tiles
-        @show tilefolder
-        outpath = joinpath(outdir, "postprocess_$tilefolder.zarr/")
-        @show outpath
-        if outpath in Zarr.subdirs(outstore, outdir)
-            println("Skip already processed tile $tilefolder")
-            continue
-        end
-        sub = first(folders)
-        #@show glob("$(sub)/*$(continent)*20M/$(tilefolder)*/*$(polarisation)_$(orbit)*.tif", indir)
-        filenamelist = [glob("$(sub)/*$(continent)*20M/$(tilefolder)*/*$(polarisation)_$(orbit)*.tif", indir) for sub in folders]
+        filenamelist = [glob("$(sub)/*$(continent)*20M/$(tilefolder)/*$(polarisation)_$(orbit)*.tif", indir) for sub in folders]
         allfilenames = collect(Iterators.flatten(filenamelist))
-        #@show allfilenames
+
         relorbits = unique([split(basename(x), "_")[5][2:end] for x in allfilenames])
         @show relorbits
 
         for relorbit in relorbits
-            path = S3Path(joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)"))
-            #s3path = "s3://"*joinpath(outstore.bucket, path)
-            @show path
-            exists(path * ".done") && continue
-            exists(path * "_zerotimesteps.done") && continue
             filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
             @time cube = gdalcube(filenames, stack)
-            
 
+            path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)")
+            @show path
+            ispath(path * ".done") && continue
+            ispath(path * "_zerotimesteps.done") && continue
 
             tcube = cube[Time=start_date .. end_date]
             @show size(cube)
             @show size(tcube)
             if size(tcube, 3) == 0
-                touch(S3Path(path * "_zerotimesteps.done"))
+                touch(path * "_zerotimesteps.done")
                 continue
             end
             try
-                orbitoutpath = string(path * ".zarr/")
-                # This is only necessary because overwrite=true doesn't work on S3 based Zarr files in YAXArrays
-                # See https://github.com/JuliaDataCubes/YAXArrays.jl/issues/511
-                if exists(S3Path(orbitoutpath))
-                    println("Deleting path $orbitoutpath")    
-                    rm(S3Path(orbitoutpath), recursive=true)
-                end
-                @show orbitoutpath
-                # This seems to ignore the overwrite keyword when the outpath point to S3.
-                @time rqatrend(tcube; thresh=threshold, outpath=orbitoutpath, overwrite=true)
-                if delete_intermediate == false
-                    PyramidScheme.buildpyramids(orbitoutpath)
-                    Zarr.consolidate_metadata(orbitoutpath)
-                end
+                outpath = path * ".zarr"
+                @time rqatrend(tcube; thresh=threshold, outpath=outpath, overwrite=true)
+                Zarr.consolidate_metadata(outpath)
             catch e
 
                 if hasproperty(e, :captured) && e.captured.ex isa ArchGDAL.GDAL.GDALError
-                    println(corruptedfiles, "Found GDALError:")
-                    println(corruptedfiles, e.captured.ex.msg)
+                    println("Found GDALError:")
+                    println(e.captured.ex.msg)
                     continue
                 else
                     rethrow(e)
                 end
             end
-            donepath = path * ".done"
-            @show donepath
-            touch(S3Path(path * ".done"))
+            touch(path * ".done")
         end
-        if postprocess
-            @show outpath
-            DD.STRICT_BROADCAST_CHECKS[] = false
-
-            RQADeforestation.postprocess(tilefolder, tempfolder, outpath, forestdir)
-            Zarr.consolidate_metadata(outpath)
-            DD.STRICT_BROADCAST_CHECKS[] = true
-            #base = basename(outpath)
-            #@show base
-            #command = `aws --endpoint-url http://s3.fairsendd.eodchosting.eu s3 cp --recursive $outpath s3://europe-forest-change/$base`
-
-            #run(command)
-        end
-        if delete_intermediate
-            rm(tempfolder, force=true, recursive=true)
-        end
-
-
     end
 end
