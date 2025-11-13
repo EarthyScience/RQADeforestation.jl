@@ -1,6 +1,7 @@
 
 @testitem "testdata main" begin
     import Pkg: Artifacts.@artifact_str
+    using LazyArtifacts
     testdatapath = artifact"rqatestdata/RQADeforestationTestData-2.0"
 
     testdir = tempname()

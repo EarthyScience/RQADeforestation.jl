@@ -8,7 +8,6 @@ using Zarr
 using Distributed: myid
 using NetCDF
 using TestItems
-using PyramidScheme: PyramidScheme
 using DimensionalData: DimensionalData as DD
 
 export gdalcube, rqatrend
@@ -18,7 +17,6 @@ include("auxil.jl")
 include("rqatrend.jl")
 include("analysis.jl")  # TODO what is still needed from analysis now that rqatrend is in its own file?
 include("cluster.jl")
-include("timestats.jl")
 include("main.jl")
 
 end
