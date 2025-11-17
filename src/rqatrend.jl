@@ -8,7 +8,7 @@ using Distances
 Compute the RQA trend metric for the datacube `cube` with the epsilon threshold `thresh`.
 """
 function rqatrend(cube; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...)
-    mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=UInt8, path=outpath, overwrite, kwargs...))
+    mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=UInt8, path=outpath, fill_value=255, overwrite, kwargs...))
 end
 
 @testitem "rqatrend cube" begin
@@ -52,10 +52,16 @@ function rqatrend(pix_trend, pix, thresh=2, lowerbound=-5., upperbound=-0.5)
     pix_trend .= classify_rqatrend(rqatrend_impl(pix; thresh); lowerbound, upperbound)
 end
 
+"""
+    classify_rqatrend(trend; lowerbound=Float32(-5.0), upperbound=Float32(-0.5)))
+Classify the rqatrend and put it into 254 bins so that they can fit into a UInt8 encoding.
+This is a compromise between data storage and accuracy of the change detection.
+"""
 function classify_rqatrend(trend; lowerbound=Float32(-5.0), upperbound=Float32(-0.5))
+    isnan(trend) && return UInt8(255)
     ctrend = clamp(trend, lowerbound, upperbound)
     rlength = upperbound - lowerbound
-    return round(UInt8, 255-((ctrend - lowerbound) / rlength) * 255)    
+    return round(UInt8, 254-((ctrend - lowerbound) / rlength) * 254)
 end
 
 @testitem "classify_rqatrend" begin
