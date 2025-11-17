@@ -100,16 +100,10 @@ function main(;
     for tilefolder in tiles
         filenamelist = [glob("$(sub)/*$(continent)*20M/$(tilefolder)/*$(polarisation)_$(orbit)*.tif", indir) for sub in folders]
         allfilenames = collect(Iterators.flatten(filenamelist))
-<<<<<<< HEAD
-        @show length(allfilenames)
-=======
-
->>>>>>> main
         relorbits = unique([split(basename(x), "_")[5][2:end] for x in allfilenames])
         @show relorbits
 
         for relorbit in relorbits
-<<<<<<< HEAD
             path = S3Path(joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)_$(start_date)_$(end_date)"))
             #s3path = "s3://"*joinpath(outstore.bucket, path)
             @show path
@@ -118,10 +112,6 @@ function main(;
             filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
             @time "cube construction" cube = gdalcube(filenames, stack)
             
-=======
-            filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
-            @time cube = gdalcube(filenames, stack)
->>>>>>> main
 
             path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)")
             @show path
@@ -136,7 +126,6 @@ function main(;
                 continue
             end
             try
-<<<<<<< HEAD
                 orbitoutpath = string(path * ".zarr/")
                 # This is only necessary because overwrite=true doesn't work on S3 based Zarr files in YAXArrays
                 # See https://github.com/JuliaDataCubes/YAXArrays.jl/issues/511
@@ -157,15 +146,9 @@ function main(;
                     #PyramidScheme.buildpyramids(orbitoutpath)
                     Zarr.consolidate_metadata(orbitoutpath)
                 end
-=======
-                outpath = path * ".zarr"
-                @time rqatrend(tcube; thresh=threshold, outpath=outpath, overwrite=true)
-                Zarr.consolidate_metadata(outpath)
->>>>>>> main
             catch e
                 println("inside catch")
                 if hasproperty(e, :captured) && e.captured.ex isa ArchGDAL.GDAL.GDALError
-<<<<<<< HEAD
                     msg = e.captured.ex.msg
                     corruptfile = split(msg, " ")[1][1:end-1]
                     corrupt_parts = split(corruptfile, "_")
@@ -178,10 +161,6 @@ function main(;
                     println(e.captured.ex.msg)
                     println(corruptedfiles, "Found GDALError:")
                     println(corruptedfiles, e.captured.ex.msg)
-=======
-                    println("Found GDALError:")
-                    println(e.captured.ex.msg)
->>>>>>> main
                     continue
                 else
                     rethrow(e)
