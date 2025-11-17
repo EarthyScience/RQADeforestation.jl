@@ -75,7 +75,7 @@ end
 
 
 function main(;
-    tiles::Vector{String},
+    tiles,
     continent::String,
     indir::String,
     outstore=Zarr.S3Store("europe-forest-change"),
@@ -125,18 +125,18 @@ function main(;
         #@show glob("$(sub)/*$(continent)*20M/$(tilefolder)*/*$(polarisation)_$(orbit)*.tif", indir)
         filenamelist = [glob("$(sub)/*$(continent)*20M/$(tilefolder)*/*$(polarisation)_$(orbit)*.tif", indir) for sub in folders]
         allfilenames = collect(Iterators.flatten(filenamelist))
-        #@show allfilenames
+        @show length(allfilenames)
         relorbits = unique([split(basename(x), "_")[5][2:end] for x in allfilenames])
         @show relorbits
 
         for relorbit in relorbits
-            path = S3Path(joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)"))
+            path = S3Path(joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)_$(start_date)_$(end_date)"))
             #s3path = "s3://"*joinpath(outstore.bucket, path)
             @show path
             exists(path * ".done") && continue
             exists(path * "_zerotimesteps.done") && continue
             filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
-            @time cube = gdalcube(filenames, stack)
+            @time "cube construction" cube = gdalcube(filenames, stack)
             
 
 
@@ -156,15 +156,31 @@ function main(;
                     rm(S3Path(orbitoutpath), recursive=true)
                 end
                 @show orbitoutpath
-                # This seems to ignore the overwrite keyword when the outpath point to S3.
-                @time rqatrend(tcube; thresh=threshold, outpath=orbitoutpath, overwrite=true)
+                # We save locally and then save a rechunked version in the cloud, 
+                # because the chunking is suboptimal which we get from the automatic setting.
+                tmppath = tempname() * ".zarr"
+                @time "rqatrend" rqatrend(tcube; thresh=threshold, outpath=tmppath, overwrite=true)
+                c = Cube(tmppath)
+                @time "save to S3" savecube(setchunks(c, (15000,15000)), orbitoutpath)
+                rm(tmppath, recursive=true)
+                @show delete_intermediate
                 if delete_intermediate == false
-                    PyramidScheme.buildpyramids(orbitoutpath)
+                    #PyramidScheme.buildpyramids(orbitoutpath)
                     Zarr.consolidate_metadata(orbitoutpath)
                 end
             catch e
-
+                println("inside catch")
                 if hasproperty(e, :captured) && e.captured.ex isa ArchGDAL.GDAL.GDALError
+                    msg = e.captured.ex.msg
+                    corruptfile = split(msg, " ")[1][1:end-1]
+                    corrupt_parts = split(corruptfile, "_")
+                    foldername = corrupt_parts[end-1]
+                    continentfolder = corrupt_parts[end-2]
+                    corruptpath = joinpath(indir, foldername, "EQUI7_$continentfolder", tilefolder, corruptfile)
+                    println("Corrupted input file")
+                    println(corruptpath) 
+                    println(joinpath(indir, ))
+                    println(e.captured.ex.msg)
                     println(corruptedfiles, "Found GDALError:")
                     println(corruptedfiles, e.captured.ex.msg)
                     continue

@@ -34,7 +34,16 @@ function DiskArrays.readblock!(a::LazyAggDiskArray, aout, i::UnitRange{Int}...)
     for (j, it) in enumerate(itime)
         arrays_now = a.arrays[a.inds[it]]
         for ia in eachindex(arrays_now)
-            DiskArrays.readblock!(arrays_now[ia], view(buf, :, :, ia), i1, i2)
+            try
+                DiskArrays.readblock!(arrays_now[ia], view(buf, :, :, ia), i1, i2)
+            catch e
+                if hasproperty(e, :captured) && e.captured.ex isa ArchGDAL.GDAL.GDALError
+                    @warn e.captured.ex.msg
+                    buf[:,:,ia] .= missing
+                else
+                    rethrow(e)
+                end
+            end
         end
         vbuf = view(buf, :, :, 1:length(arrays_now))
         map!(a.f, view(aout, :, :, j), eachslice(vbuf, dims=(1, 2)))
@@ -189,7 +198,7 @@ function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:dae)
             aggdata = DAE.aggregate_diskarray(gcube, mean ∘ skipmissing, (3 => stackinds,); strategy=:direct)
         else
             println("Construct lazy diskarray")
-            LazyAggDiskArray(mean ∘ skipmissing, cubelist, stackinds)
+            LazyAggDiskArray(skipmissingmean, cubelist, stackinds)
         end
         #    data = DiskArrays.ConcatDiskArray(reshape(groupcubes, (1,1,length(groupcubes))))
         dates_grouped = [sdates[group[begin]] for group in groupinds]
@@ -240,6 +249,14 @@ function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:dae)
     #dates_grouped = [sdates[group[begin]] for group in groupinds]
 end
 
+function skipmissingmean(x)
+    isempty(x) && return missing
+    s,n = reduce(x,init=(zero(eltype(x)),0)) do (s,n), ix
+        ismissing(ix) ? (s,n) : (s+ix,n+1)
+    end
+    n==0 ? missing : s/n
+end
+#Base.∘(::typeof(mean), ::typeof(skipmissing)) = skipmissingmean
 
 const equi7crs = Dict(
     "AF" => ProjString("+proj=aeqd +lat_0=8.5 +lon_0=21.5 +x_0=5621452.01998 +y_0=5990638.42298 +datum=WGS84 +units=m +no_defs"),
