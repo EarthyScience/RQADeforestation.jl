@@ -8,7 +8,6 @@ using Zarr
 using Distributed: myid
 using NetCDF
 using TestItems
-using PyramidScheme: PyramidScheme
 using DimensionalData: DimensionalData as DD
 
 export gdalcube, rqatrend

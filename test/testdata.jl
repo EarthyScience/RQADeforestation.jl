@@ -25,6 +25,8 @@
     a = open_dataset(outdir * "/E051N018T3_rqatrend_VH_D022_thresh_3.0.zarr").layer
 
     @test size(a) == (50, 74)
+    @test minimum(a) < 0
+    @test maximum(a) > 0
 end
 
 @testitem "testdata julia_main" begin
