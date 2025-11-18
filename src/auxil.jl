@@ -256,7 +256,17 @@ function skipmissingmean(x)
     end
     n==0 ? missing : s/n
 end
+
+# I don't dare to make this type piracy. 
 #Base.∘(::typeof(mean), ::typeof(skipmissing)) = skipmissingmean
+
+@testitem "skipmissingmean" begin
+    @test ismissing(RQADeforestation.skipmissingmean(Float32[]))
+    @test ismissing(RQADeforestation.skipmissingmean(Union{Float32, Missing}[missing, missing]))
+    @test RQADeforestation.skipmissingmean([1,0,missing]) == 0.5
+    @test RQADeforestation.skipmissingmean([1,2,3]) == 2.0
+end
+
 
 const equi7crs = Dict(
     "AF" => ProjString("+proj=aeqd +lat_0=8.5 +lon_0=21.5 +x_0=5621452.01998 +y_0=5990638.42298 +datum=WGS84 +units=m +no_defs"),
