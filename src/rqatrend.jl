@@ -6,9 +6,10 @@ using Distances
 """rqatrend(cube;thresh=2, path=tempname() * ".zarr")
 
 Compute the RQA trend metric for the datacube `cube` with the epsilon threshold `thresh`.
+`lowerbound` and `upperbound` are forwarded to the classification of the RQA Trend result.
 """
-function rqatrend(cube; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...)
-    mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=UInt8, path=outpath, fill_value=255, overwrite, kwargs...))
+function rqatrend(cube; thresh=2, lowerbound=-5, upperbound=-0.5, outpath=tempname() * ".zarr", overwrite=false, kwargs...)
+    mapCube(rqatrend, cube, thresh, lowerbound, upperbound; indims=InDims("Time"), outdims=OutDims(; outtype=UInt8, path=outpath, fill_value=255, overwrite, kwargs...))
 end
 
 @testitem "rqatrend cube" begin
@@ -37,16 +38,19 @@ end
 """rqatrend(path::AbstractString; thresh=2, outpath=tempname()*".zarr")
 
 Compute the RQA trend metric for the data that is available on `path`.
+See the `rqatrend` for a YAXArray for the description of the parameters.
 """
-rqatrend(path::AbstractString; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...) = 
-    rqatrend(Cube(path); thresh, outpath, overwrite, kwargs...)
+rqatrend(path::AbstractString; thresh=2, lowerbound=-5., upperbound=-0.5, outpath=tempname() * ".zarr", overwrite=false, kwargs...) = 
+    rqatrend(Cube(path); thresh, lowerbound, upperbound, outpath, overwrite, kwargs...)
 
 
 """
 rqatrend(xout, xin, thresh)
 
 Compute the RQA trend metric for the non-missing time steps of xin, and save it to xout. 
-`thresh` specifies the epsilon threshold of the Recurrence Plot computation
+`thresh` specifies the epsilon threshold of the Recurrence Plot computation.
+`lowerbound` and `upperbound` are the bounds of the classification into UInt8.
+The result of rqatrend are UInt8 values between 0 (no change) to 254 (definitive change) with 255 as sentinel value for missing data.
 """
 function rqatrend(pix_trend, pix, thresh=2, lowerbound=-5., upperbound=-0.5)
     pix_trend .= classify_rqatrend(rqatrend_impl(pix; thresh); lowerbound, upperbound)
@@ -56,6 +60,7 @@ end
     classify_rqatrend(trend; lowerbound=Float32(-5.0), upperbound=Float32(-0.5)))
 Classify the rqatrend and put it into 254 bins so that they can fit into a UInt8 encoding.
 This is a compromise between data storage and accuracy of the change detection.
+The value range is 0 (no change) to 254 (definitive change) with 255 kept free as a Sentinel value for missing data.
 """
 function classify_rqatrend(trend; lowerbound=Float32(-5.0), upperbound=Float32(-0.5))
     isnan(trend) && return UInt8(255)
