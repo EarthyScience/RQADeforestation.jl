@@ -114,9 +114,6 @@ function main(;
             filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
             @time "cube construction" cube = gdalcube(filenames, stack)
             
-
-            path = joinpath(outdir, "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)")
-            @show path
             ispath(path * ".done") && continue
             ispath(path * "_zerotimesteps.done") && continue
 
