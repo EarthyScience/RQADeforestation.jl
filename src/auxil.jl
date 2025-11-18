@@ -154,7 +154,6 @@ function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:lazy
 
     #@show sdates
     # Put the dates which are 200 seconds apart into groups
-    if stackgroups in [:dae, :lazyagg]
         groupinds = grouptimes(sdates, 200000)
         onefile = first(sfiles)
         gd = backendlist[:gdal]
@@ -173,13 +172,8 @@ function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:lazy
 
         cubelist = CFDiskArray.(group_gdbs, (gdbattrs,))
         stackinds = stackindices(sdates)
-        aggdata = if stackgroups == :dae
-            gcube = diskstack(cubelist)
-            aggdata = DAE.aggregate_diskarray(gcube, mean ∘ skipmissing, (3 => stackinds,); strategy=:direct)
-        else
-            println("Construct lazy diskarray")
-            LazyAggDiskArray(skipmissingmean, cubelist, stackinds)
-        end
+        println("Construct lazy diskarray")
+        aggdata = LazyAggDiskArray(skipmissingmean, cubelist, stackinds)
         #    data = DiskArrays.ConcatDiskArray(reshape(groupcubes, (1,1,length(groupcubes))))
         dates_grouped = [sdates[group[begin]] for group in groupinds]
 

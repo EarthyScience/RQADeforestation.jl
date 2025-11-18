@@ -77,7 +77,7 @@ function main(;
     orbit="D",
     threshold=3.0,
     folders=["V1M0R1", "V1M1R1", "V1M1R2"],
-    stack=:dae,
+    stack=:lazyagg,
     delete_intermediate=false
 )
     outdir = Path(outdir)

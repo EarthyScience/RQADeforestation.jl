@@ -21,7 +21,8 @@
         indir=indir,
         start_date=Date("2021-01-01"),
         end_date=Date("2022-01-01"),
-        outdir=Path(outdir)
+        outdir=Path(outdir),
+        stack=:lazyagg,
     )
     a = open_dataset(joinpath(outdir, "E051N018T3_rqatrend_VH_D022_thresh_3.0_2021-01-01_2022-01-01.zarr")).layer
 
