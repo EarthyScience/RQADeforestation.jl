@@ -1,10 +1,9 @@
 name = "RQADeforestation"
 uuid = "3f1d9318-18cc-4ffd-9937-04025ce33b74"
-authors = ["Felix Cremer <felix.cremer@bgc-jena.mpg.de>, Daniel Loos <dloos@bgc-jena.mpg.de> and contributors"]
 version = "1.0.0-DEV"
+authors = ["Felix Cremer <felix.cremer@bgc-jena.mpg.de>, Daniel Loos <dloos@bgc-jena.mpg.de> and contributors"]
 
 [deps]
-AWSS3 = "1c724243-ef5b-51ab-93f4-b0a88ac62a95"
 ArchGDAL = "c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3"
 ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
@@ -45,7 +44,6 @@ YAXArrays = "c21b50f5-aa40-41ea-b809-c0f5e47bfa5c"
 Zarr = "0a941bbe-ad1d-11e8-39d9-ab76183a1d99"
 
 [compat]
-AWSS3 = "0.10.4"
 AllocCheck = "0.2.2"
 Aqua = "0.8.13"
 ArchGDAL = "0.10"
