@@ -1,5 +1,6 @@
 using ArgParse
 using YAXArrays: YAXDefaults
+using AWSS3: S3Path
 
 
 const argparsesettings = ArgParseSettings()
