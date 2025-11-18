@@ -1,6 +1,6 @@
 using ArgParse
 using YAXArrays: YAXDefaults
-using AWSS3: S3Path
+using FilePathsBase: exists, Path
 
 
 const argparsesettings = ArgParseSettings()
@@ -77,8 +77,10 @@ function main(;
     orbit="D",
     threshold=3.0,
     folders=["V1M0R1", "V1M1R1", "V1M1R2"],
-    stack=:dae
+    stack=:dae,
+    delete_intermediate=false
 )
+    outdir = Path(outdir)
     in(orbit, ["A", "D"]) || error("Orbit needs to be either A or D")
     if isdir(indir) && isempty(indir)
         error("Input directory $indir must not be empty")
@@ -94,7 +96,6 @@ function main(;
         @warn "Selected time series does not include a multiple of whole years. This might introduce seasonal bias."
     end
 
-    YAXDefaults.workdir[] = outdir
 
     corruptedfiles = "corrupted_tiles.txt"
     # TODO save the corrupt files to a txt for investigation
@@ -105,7 +106,7 @@ function main(;
         @show relorbits
 
         for relorbit in relorbits
-            path = S3Path(joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)_$(start_date)_$(end_date)"))
+            path = joinpath(outdir, "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)_$(start_date)_$(end_date)")
             #s3path = "s3://"*joinpath(outstore.bucket, path)
             @show path
             exists(path * ".done") && continue
@@ -114,7 +115,7 @@ function main(;
             @time "cube construction" cube = gdalcube(filenames, stack)
             
 
-            path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)")
+            path = joinpath(outdir, "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)")
             @show path
             ispath(path * ".done") && continue
             ispath(path * "_zerotimesteps.done") && continue
@@ -127,12 +128,12 @@ function main(;
                 continue
             end
             try
-                orbitoutpath = string(path * ".zarr/")
+                orbitoutpath = path * ".zarr/"
                 # This is only necessary because overwrite=true doesn't work on S3 based Zarr files in YAXArrays
                 # See https://github.com/JuliaDataCubes/YAXArrays.jl/issues/511
-                if exists(S3Path(orbitoutpath))
+                if exists(orbitoutpath)
                     println("Deleting path $orbitoutpath")    
-                    rm(S3Path(orbitoutpath), recursive=true)
+                    rm(orbitoutpath, recursive=true)
                 end
                 @show orbitoutpath
                 # We save locally and then save a rechunked version in the cloud, 
@@ -140,12 +141,12 @@ function main(;
                 tmppath = tempname() * ".zarr"
                 @time "rqatrend" rqatrend(tcube; thresh=threshold, outpath=tmppath, overwrite=true)
                 c = Cube(tmppath)
-                @time "save to S3" savecube(setchunks(c, (15000,15000)), orbitoutpath)
+                @time "save to S3" savecube(setchunks(c, (15000,15000)), string(orbitoutpath))
                 rm(tmppath, recursive=true)
                 @show delete_intermediate
                 if delete_intermediate == false
                     #PyramidScheme.buildpyramids(orbitoutpath)
-                    Zarr.consolidate_metadata(orbitoutpath)
+                    Zarr.consolidate_metadata(string(orbitoutpath))
                 end
             catch e
                 println("inside catch")
