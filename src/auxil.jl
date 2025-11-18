@@ -144,27 +144,7 @@ function stackindices(times, timediff=200000)
     return groups
 end
 
-#=
-function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
-   if !isa(aout,Matrix)
-      aout2 = similar(aout)
-      AG.read(b.filename) do ds
-         AG.getband(ds, b.band) do bh
-             DiskArrays.readblock!(bh, aout2, r...)
-         end
-     end
-     aout .= aout2
-   else   
-   AG.read(b.filename) do ds
-       AG.getband(ds, b.band) do bh
-           DiskArrays.readblock!(bh, aout, r...)
-       end
-   end
-   end
-end
-=#
-
-function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:dae)
+function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:lazyagg)
     dates = getdate.(filenames)
     @show length(dates)
     # Sort the dates and files by DateTime
@@ -206,47 +186,6 @@ function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:dae)
         taxis = DD.Ti(dates_grouped)
         gcube = Cube(sfiles[1])
         return YAXArray((DD.dims(gcube)[1:2]..., taxis), aggdata, gcube.properties,)
-    else
-        #datasets = AG.readraster.(sfiles)
-        taxis = DD.Ti(sdates)
-
-        onefile = first(sfiles)
-        gd = backendlist[:gdal]
-        yax1 = gd(onefile)
-        onecube = Cube(onefile)
-        #@show onecube.axes
-        gdb = get_var_handle(yax1, "Gray")
-
-        #@assert gdb isa GDALBand
-        all_gdbs = map(sfiles) do f
-            BufferGDALBand{eltype(gdb)}(f, gdb.band, gdb.size, gdb.attrs, gdb.cs, Dict{Int,AG.IRasterBand}())
-        end
-        stacked_gdbs = diskstack(all_gdbs)
-        attrs = copy(gdb.attrs)
-        #attrs["add_offset"] = Float16(attrs["add_offset"])
-        if haskey(attrs, "scale_factor")
-            attrs["scale_factor"] = Float16(attrs["scale_factor"])
-        end
-        all_cfs = CFDiskArray(stacked_gdbs, attrs)
-        return YAXArray((onecube.axes..., taxis), all_cfs, onecube.properties)
-    end
-    #datasetgroups = [datasets[group] for group in groupinds]
-    #We have to save the vrts because the usage of nested vrts is not working as a rasterdataset
-    #temp = tempdir()
-    #outpaths = [joinpath(temp, splitext(basename(sfiles[group][1]))[1] * ".vrt") for group in groupinds]
-    #vrt_grouped = AG.unsafe_gdalbuildvrt.(datasetgroups)
-    #AG.write.(vrt_grouped, outpaths)
-    #vrt_grouped = AG.read.(outpaths)
-    #vrt_vv = AG.unsafe_gdalbuildvrt(vrt_grouped, ["-separate"])
-    #rvrt_vv = AG.RasterDataset(vrt_vv)
-    #yaxras = YAXArray.(sfiles)
-    #cube = concatenatecubes(yaxras, taxis)
-    #bandnames = AG.GDAL.gdalgetfilelist(vrt_vv.ptr)
-
-
-
-    # Set the timesteps from the bandnames as time axis
-    #dates_grouped = [sdates[group[begin]] for group in groupinds]
 end
 
 function skipmissingmean(x)
