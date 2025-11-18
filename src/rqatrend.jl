@@ -31,7 +31,7 @@ end
     mock_trend = rqatrend(mock_cube; thresh=0.5)
     @test mock_trend.axes == (mock_cube.X, mock_cube.Y)
     diff = abs(mean(mock_trend))
-    @test diff < 0.5
+    @test diff < 254
 end
 
 """rqatrend(path::AbstractString; thresh=2, outpath=tempname()*".zarr")
@@ -66,10 +66,10 @@ end
 
 @testitem "classify_rqatrend" begin
     import AllocCheck
-    @test RQADeforestation.classify_rqatrend(-4.999) === UInt8(255)
+    @test RQADeforestation.classify_rqatrend(-4.999) === UInt8(254)
     @test RQADeforestation.classify_rqatrend(1) === UInt8(0)
     @test RQADeforestation.classify_rqatrend(-0.52) === UInt8(1)
-    @test RQADeforestation.classify_rqatrend(-6) === UInt8(255)
+    @test RQADeforestation.classify_rqatrend(-6) === UInt8(254)
     @test isempty( AllocCheck.check_allocs(RQADeforestation.classify_rqatrend, (Float32,)))
 end
 

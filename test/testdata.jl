@@ -2,6 +2,7 @@
 @testitem "testdata main" begin
     import Pkg: Artifacts.@artifact_str
     using LazyArtifacts
+    using FilePathsBase
     testdatapath = artifact"rqatestdata/RQADeforestationTestData-2.0"
 
     testdir = tempname()
@@ -20,13 +21,13 @@
         indir=indir,
         start_date=Date("2021-01-01"),
         end_date=Date("2022-01-01"),
-        outdir=outdir
+        outdir=Path(outdir)
     )
     a = open_dataset(outdir * "/E051N018T3_rqatrend_VH_D022_thresh_3.0.zarr").layer
 
     @test size(a) == (50, 74)
-    @test minimum(a) < 0
-    @test maximum(a) > 0
+    @test minimum(a) == 0 
+    @test maximum(a) > 200
 end
 
 @testitem "testdata julia_main" begin
