@@ -78,7 +78,8 @@ function main(;
     threshold=3.0,
     folders=["V1M0R1", "V1M1R1", "V1M1R2"],
     stack=:lazyagg,
-    delete_intermediate=false
+    delete_intermediate=false,
+    compute_prange=true,
 )
     outdir = Path(outdir)
     in(orbit, ["A", "D"]) || error("Orbit needs to be either A or D")
@@ -140,7 +141,14 @@ function main(;
                 c = Cube(tmppath)
                 @time "save to S3" savecube(setchunks(c, (15000,15000)), string(orbitoutpath))
                 rm(tmppath, recursive=true)
-                @show delete_intermediate
+                if compute_prange
+                    prangepath = replace(orbitoutpath, "rqatrend"=>"prange", "thresh_3.0_"=>"")
+                    tmppath = tempname() * ".zarr"
+                    @time "prange" prange(tcube, outpath=tmppath, overwrite=true)
+                    cprange = Cube(tmppath)
+                    @time "save to S3" savecube(setchunks(c, (15000,15000)), string(prangepath))
+                    rm(tmppath, recursive=true)
+                end
                 if delete_intermediate == false
                     #PyramidScheme.buildpyramids(orbitoutpath)
                     Zarr.consolidate_metadata(string(orbitoutpath))
