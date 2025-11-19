@@ -1,5 +1,6 @@
 using ArgParse
 using YAXArrays: YAXDefaults
+using FilePathsBase: exists, Path
 
 
 const argparsesettings = ArgParseSettings()
@@ -66,7 +67,7 @@ end
 
 
 function main(;
-    tiles::Vector{String},
+    tiles,
     continent::String,
     indir::String,
     outdir="out.zarr",
@@ -76,8 +77,10 @@ function main(;
     orbit="D",
     threshold=3.0,
     folders=["V1M0R1", "V1M1R1", "V1M1R2"],
-    stack=:dae
+    stack=:lazyagg,
+    delete_intermediate=false
 )
+    outdir = Path(outdir)
     in(orbit, ["A", "D"]) || error("Orbit needs to be either A or D")
     if isdir(indir) && isempty(indir)
         error("Input directory $indir must not be empty")
@@ -93,23 +96,24 @@ function main(;
         @warn "Selected time series does not include a multiple of whole years. This might introduce seasonal bias."
     end
 
-    YAXDefaults.workdir[] = outdir
 
     corruptedfiles = "corrupted_tiles.txt"
     # TODO save the corrupt files to a txt for investigation
     for tilefolder in tiles
         filenamelist = [glob("$(sub)/*$(continent)*20M/$(tilefolder)/*$(polarisation)_$(orbit)*.tif", indir) for sub in folders]
         allfilenames = collect(Iterators.flatten(filenamelist))
-
         relorbits = unique([split(basename(x), "_")[5][2:end] for x in allfilenames])
         @show relorbits
 
         for relorbit in relorbits
-            filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
-            @time cube = gdalcube(filenames, stack)
-
-            path = joinpath(YAXDefaults.workdir[], "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)")
+            path = joinpath(outdir, "$(tilefolder)_rqatrend_$(polarisation)_$(orbit)$(relorbit)_thresh_$(threshold)_$(start_date)_$(end_date)")
+            #s3path = "s3://"*joinpath(outstore.bucket, path)
             @show path
+            exists(path * ".done") && continue
+            exists(path * "_zerotimesteps.done") && continue
+            filenames = allfilenames[findall(contains("$(relorbit)_E"), allfilenames)]
+            @time "cube construction" cube = gdalcube(filenames, stack)
+            
             ispath(path * ".done") && continue
             ispath(path * "_zerotimesteps.done") && continue
 
@@ -121,14 +125,41 @@ function main(;
                 continue
             end
             try
-                outpath = path * ".zarr"
-                @time rqatrend(tcube; thresh=threshold, outpath=outpath, overwrite=true)
-                Zarr.consolidate_metadata(outpath)
+                orbitoutpath = path * ".zarr/"
+                # This is only necessary because overwrite=true doesn't work on S3 based Zarr files in YAXArrays
+                # See https://github.com/JuliaDataCubes/YAXArrays.jl/issues/511
+                if exists(orbitoutpath)
+                    println("Deleting path $orbitoutpath")    
+                    rm(orbitoutpath, recursive=true)
+                end
+                @show orbitoutpath
+                # We save locally and then save a rechunked version in the cloud, 
+                # because the chunking is suboptimal which we get from the automatic setting.
+                tmppath = tempname() * ".zarr"
+                @time "rqatrend" rqatrend(tcube; thresh=threshold, outpath=tmppath, overwrite=true)
+                c = Cube(tmppath)
+                @time "save to S3" savecube(setchunks(c, (15000,15000)), string(orbitoutpath))
+                rm(tmppath, recursive=true)
+                @show delete_intermediate
+                if delete_intermediate == false
+                    #PyramidScheme.buildpyramids(orbitoutpath)
+                    Zarr.consolidate_metadata(string(orbitoutpath))
+                end
             catch e
-
+                println("inside catch")
                 if hasproperty(e, :captured) && e.captured.ex isa ArchGDAL.GDAL.GDALError
-                    println("Found GDALError:")
+                    msg = e.captured.ex.msg
+                    corruptfile = split(msg, " ")[1][1:end-1]
+                    corrupt_parts = split(corruptfile, "_")
+                    foldername = corrupt_parts[end-1]
+                    continentfolder = corrupt_parts[end-2]
+                    corruptpath = joinpath(indir, foldername, "EQUI7_$continentfolder", tilefolder, corruptfile)
+                    println("Corrupted input file")
+                    println(corruptpath) 
+                    println(joinpath(indir, ))
                     println(e.captured.ex.msg)
+                    println(corruptedfiles, "Found GDALError:")
+                    println(corruptedfiles, e.captured.ex.msg)
                     continue
                 else
                     rethrow(e)

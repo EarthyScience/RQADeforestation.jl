@@ -34,7 +34,16 @@ function DiskArrays.readblock!(a::LazyAggDiskArray, aout, i::UnitRange{Int}...)
     for (j, it) in enumerate(itime)
         arrays_now = a.arrays[a.inds[it]]
         for ia in eachindex(arrays_now)
-            DiskArrays.readblock!(arrays_now[ia], view(buf, :, :, ia), i1, i2)
+            try
+                DiskArrays.readblock!(arrays_now[ia], view(buf, :, :, ia), i1, i2)
+            catch e
+                if hasproperty(e, :captured) && e.captured.ex isa ArchGDAL.GDAL.GDALError
+                    @warn e.captured.ex.msg
+                    buf[:,:,ia] .= missing
+                else
+                    rethrow(e)
+                end
+            end
         end
         vbuf = view(buf, :, :, 1:length(arrays_now))
         map!(a.f, view(aout, :, :, j), eachslice(vbuf, dims=(1, 2)))
@@ -135,27 +144,7 @@ function stackindices(times, timediff=200000)
     return groups
 end
 
-#=
-function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
-   if !isa(aout,Matrix)
-      aout2 = similar(aout)
-      AG.read(b.filename) do ds
-         AG.getband(ds, b.band) do bh
-             DiskArrays.readblock!(bh, aout2, r...)
-         end
-     end
-     aout .= aout2
-   else   
-   AG.read(b.filename) do ds
-       AG.getband(ds, b.band) do bh
-           DiskArrays.readblock!(bh, aout, r...)
-       end
-   end
-   end
-end
-=#
-
-function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:dae)
+function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:lazyagg)
     dates = getdate.(filenames)
     @show length(dates)
     # Sort the dates and files by DateTime
@@ -165,7 +154,6 @@ function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:dae)
 
     #@show sdates
     # Put the dates which are 200 seconds apart into groups
-    if stackgroups in [:dae, :lazyagg]
         groupinds = grouptimes(sdates, 200000)
         onefile = first(sfiles)
         gd = backendlist[:gdal]
@@ -184,60 +172,32 @@ function gdalcube(filenames::AbstractVector{<:AbstractString}, stackgroups=:dae)
 
         cubelist = CFDiskArray.(group_gdbs, (gdbattrs,))
         stackinds = stackindices(sdates)
-        aggdata = if stackgroups == :dae
-            gcube = diskstack(cubelist)
-            aggdata = DAE.aggregate_diskarray(gcube, mean ∘ skipmissing, (3 => stackinds,); strategy=:direct)
-        else
-            println("Construct lazy diskarray")
-            LazyAggDiskArray(mean ∘ skipmissing, cubelist, stackinds)
-        end
+        println("Construct lazy diskarray")
+        aggdata = LazyAggDiskArray(skipmissingmean, cubelist, stackinds)
         #    data = DiskArrays.ConcatDiskArray(reshape(groupcubes, (1,1,length(groupcubes))))
         dates_grouped = [sdates[group[begin]] for group in groupinds]
 
         taxis = DD.Ti(dates_grouped)
         gcube = Cube(sfiles[1])
         return YAXArray((DD.dims(gcube)[1:2]..., taxis), aggdata, gcube.properties,)
-    else
-        #datasets = AG.readraster.(sfiles)
-        taxis = DD.Ti(sdates)
+end
 
-        onefile = first(sfiles)
-        gd = backendlist[:gdal]
-        yax1 = gd(onefile)
-        onecube = Cube(onefile)
-        #@show onecube.axes
-        gdb = get_var_handle(yax1, "Gray")
-
-        #@assert gdb isa GDALBand
-        all_gdbs = map(sfiles) do f
-            BufferGDALBand{eltype(gdb)}(f, gdb.band, gdb.size, gdb.attrs, gdb.cs, Dict{Int,AG.IRasterBand}())
-        end
-        stacked_gdbs = diskstack(all_gdbs)
-        attrs = copy(gdb.attrs)
-        #attrs["add_offset"] = Float16(attrs["add_offset"])
-        if haskey(attrs, "scale_factor")
-            attrs["scale_factor"] = Float16(attrs["scale_factor"])
-        end
-        all_cfs = CFDiskArray(stacked_gdbs, attrs)
-        return YAXArray((onecube.axes..., taxis), all_cfs, onecube.properties)
+function skipmissingmean(x)
+    isempty(x) && return missing
+    s,n = reduce(x,init=(zero(eltype(x)),0)) do (s,n), ix
+        ismissing(ix) ? (s,n) : (s+ix,n+1)
     end
-    #datasetgroups = [datasets[group] for group in groupinds]
-    #We have to save the vrts because the usage of nested vrts is not working as a rasterdataset
-    #temp = tempdir()
-    #outpaths = [joinpath(temp, splitext(basename(sfiles[group][1]))[1] * ".vrt") for group in groupinds]
-    #vrt_grouped = AG.unsafe_gdalbuildvrt.(datasetgroups)
-    #AG.write.(vrt_grouped, outpaths)
-    #vrt_grouped = AG.read.(outpaths)
-    #vrt_vv = AG.unsafe_gdalbuildvrt(vrt_grouped, ["-separate"])
-    #rvrt_vv = AG.RasterDataset(vrt_vv)
-    #yaxras = YAXArray.(sfiles)
-    #cube = concatenatecubes(yaxras, taxis)
-    #bandnames = AG.GDAL.gdalgetfilelist(vrt_vv.ptr)
+    n==0 ? missing : s/n
+end
 
+# I don't dare to make this type piracy. 
+#Base.∘(::typeof(mean), ::typeof(skipmissing)) = skipmissingmean
 
-
-    # Set the timesteps from the bandnames as time axis
-    #dates_grouped = [sdates[group[begin]] for group in groupinds]
+@testitem "skipmissingmean" begin
+    @test ismissing(RQADeforestation.skipmissingmean(Float32[]))
+    @test ismissing(RQADeforestation.skipmissingmean(Union{Float32, Missing}[missing, missing]))
+    @test RQADeforestation.skipmissingmean([1,0,missing]) == 0.5
+    @test RQADeforestation.skipmissingmean([1,2,3]) == 2.0
 end
 
 

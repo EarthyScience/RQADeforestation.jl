@@ -6,10 +6,10 @@ using Distances
 """rqatrend(cube;thresh=2, path=tempname() * ".zarr")
 
 Compute the RQA trend metric for the datacube `cube` with the epsilon threshold `thresh`.
+`lowerbound` and `upperbound` are forwarded to the classification of the RQA Trend result.
 """
-function rqatrend(cube; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...)
-    @show outpath
-    mapCube(rqatrend, cube, thresh; indims=InDims("Time"), outdims=OutDims(; outtype=Float32, path=outpath, overwrite, kwargs...))
+function rqatrend(cube; thresh=2, lowerbound=-5, upperbound=-0.5, outpath=tempname() * ".zarr", overwrite=false, kwargs...)
+    mapCube(rqatrend, cube, thresh, lowerbound, upperbound; indims=InDims("Time"), outdims=OutDims(; outtype=UInt8, path=outpath, fill_value=255, overwrite, kwargs...))
 end
 
 @testitem "rqatrend cube" begin
@@ -32,27 +32,51 @@ end
     mock_trend = rqatrend(mock_cube; thresh=0.5)
     @test mock_trend.axes == (mock_cube.X, mock_cube.Y)
     diff = abs(mean(mock_trend))
-    @test diff < 0.5
+    @test diff < 254
 end
 
 """rqatrend(path::AbstractString; thresh=2, outpath=tempname()*".zarr")
 
 Compute the RQA trend metric for the data that is available on `path`.
+See the `rqatrend` for a YAXArray for the description of the parameters.
 """
-rqatrend(path::AbstractString; thresh=2, outpath=tempname() * ".zarr", overwrite=false, kwargs...) = 
-    rqatrend(Cube(path); thresh, outpath, overwrite, kwargs...)
+rqatrend(path::AbstractString; thresh=2, lowerbound=-5., upperbound=-0.5, outpath=tempname() * ".zarr", overwrite=false, kwargs...) = 
+    rqatrend(Cube(path); thresh, lowerbound, upperbound, outpath, overwrite, kwargs...)
 
 
 """
 rqatrend(xout, xin, thresh)
 
 Compute the RQA trend metric for the non-missing time steps of xin, and save it to xout. 
-`thresh` specifies the epsilon threshold of the Recurrence Plot computation
+`thresh` specifies the epsilon threshold of the Recurrence Plot computation.
+`lowerbound` and `upperbound` are the bounds of the classification into UInt8.
+The result of rqatrend are UInt8 values between 0 (no change) to 254 (definitive change) with 255 as sentinel value for missing data.
 """
-function rqatrend(pix_trend, pix, thresh=2)
-    pix_trend .= rqatrend_impl(pix; thresh)
+function rqatrend(pix_trend, pix, thresh=2, lowerbound=-5., upperbound=-0.5)
+    pix_trend .= classify_rqatrend(rqatrend_impl(pix; thresh); lowerbound, upperbound)
 end
 
+"""
+    classify_rqatrend(trend; lowerbound=Float32(-5.0), upperbound=Float32(-0.5)))
+Classify the rqatrend and put it into 254 bins so that they can fit into a UInt8 encoding.
+This is a compromise between data storage and accuracy of the change detection.
+The value range is 0 (no change) to 254 (definitive change) with 255 kept free as a Sentinel value for missing data.
+"""
+function classify_rqatrend(trend; lowerbound=Float32(-5.0), upperbound=Float32(-0.5))
+    isnan(trend) && return UInt8(255)
+    ctrend = clamp(trend, lowerbound, upperbound)
+    rlength = upperbound - lowerbound
+    return round(UInt8, 254-((ctrend - lowerbound) / rlength) * 254)
+end
+
+@testitem "classify_rqatrend" begin
+    import AllocCheck
+    @test RQADeforestation.classify_rqatrend(-4.999) === UInt8(254)
+    @test RQADeforestation.classify_rqatrend(1) === UInt8(0)
+    @test RQADeforestation.classify_rqatrend(-0.52) === UInt8(1)
+    @test RQADeforestation.classify_rqatrend(-6) === UInt8(254)
+    @test isempty( AllocCheck.check_allocs(RQADeforestation.classify_rqatrend, (Float32,)))
+end
 
 function rqatrend_impl(data; thresh=2, border=10, theiler=1, metric=CheckedEuclidean())
     # simplified implementation of https://stats.stackexchange.com/a/370175 and https://github.com/joshday/OnlineStats.jl/blob/b89a99679b13e3047ff9c93a03c303c357931832/src/stats/linreg.jl
