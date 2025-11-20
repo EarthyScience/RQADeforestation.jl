@@ -142,7 +142,7 @@ function main(;
                 @time "save to S3" savecube(setchunks(c, (15000,15000)), string(orbitoutpath))
                 rm(tmppath, recursive=true)
                 if compute_prange
-                    prangepath = replace(orbitoutpath, "rqatrend"=>"prange", "thresh_3.0_"=>"")
+                    prangepath = Path(replace(string(orbitoutpath), "rqatrend"=>"prange", "thresh_3.0_"=>""))
                     tmppath = tempname() * ".zarr"
                     @time "prange" prange(tcube, outpath=tmppath, overwrite=true)
                     cprange = Cube(tmppath)
