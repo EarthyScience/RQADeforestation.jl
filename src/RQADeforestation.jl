@@ -10,7 +10,7 @@ using NetCDF
 using TestItems
 using DimensionalData: DimensionalData as DD
 
-export gdalcube, rqatrend
+export gdalcube, rqatrend, prange
 
 include("metrics.jl")
 include("auxil.jl")

@@ -170,3 +170,44 @@ Weighted average of `a` and `b` with weight `γ`.
 ``(1 - γ) * a + γ * b``
 """
 smooth(a, b, γ) = a + γ * (b - a)
+
+"""
+prange(xout, xin)
+
+Compute the percentile range for the non-missing time steps of xin, and save it to xout.
+`lowerpercentile` and `upperpercentile` specify the boundary of the percentile range. 
+These have to be between 0 and 1. 
+"""
+function prange(xout, xin, lowpercentile=0.02, upperpercentile=0.98)
+    xinfiltered = filter(!ismissing, xin)
+    filter!(!isnan, xinfiltered)
+    lowerlim, upperlim = quantile(xinfiltered, [lowpercentile, upperpercentile])
+    xout .= upperlim - lowerlim
+end
+
+function prange(cube; lowerpercentile=0.02, upperpercentile=0.98, outpath=tempname() * ".zarr", overwrite=false, kwargs...)
+    mapCube(prange, cube, lowerpercentile, upperpercentile; indims=InDims("Time"), outdims=OutDims(; outtype=Float32, path=outpath, fill_value=NaN, overwrite, kwargs...))
+end
+
+@testitem "prange cube" begin
+    using YAXArrays
+    using Dates
+    using DimensionalData: Ti, X, Y
+    using Statistics
+    import Random
+    Random.seed!(1234)
+
+    mock_axes = (
+        Ti(Date("2022-01-01"):Day(1):Date("2022-01-01")+ Day(100)),
+        X(range(1, 10, length=10)),
+        Y(range(1, 5, length=15)),
+    )
+    s = size(mock_axes)
+    mock_data = reshape(1:prod(s), s)
+    mock_props = Dict()
+    mock_cube = YAXArray(mock_axes, mock_data, mock_props)
+
+    mock_trend = prange(mock_cube)
+    @test mock_trend.axes == (mock_cube.X, mock_cube.Y)
+    @test mock_trend[1,1] == 96
+end
