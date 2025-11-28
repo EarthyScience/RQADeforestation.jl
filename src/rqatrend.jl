@@ -8,8 +8,8 @@ using Distances
 Compute the RQA trend metric for the datacube `cube` with the epsilon threshold `thresh`.
 `lowerbound` and `upperbound` are forwarded to the classification of the RQA Trend result.
 """
-function rqatrend(cube; thresh=2, lowerbound=-5, upperbound=-0.5, outpath=tempname() * ".zarr", overwrite=false, kwargs...)
-    mapCube(rqatrend, cube, thresh, lowerbound, upperbound; indims=InDims("Time"), outdims=OutDims(; outtype=UInt8, path=outpath, fill_value=255, overwrite, kwargs...))
+function rqatrend(cube; thresh=2, lowerbound=-5, upperbound=-0.5, outpath=tempname() * ".zarr", overwrite=false, classify=true, kwargs...)
+    mapCube(rqatrend, cube, thresh, lowerbound, upperbound; classify, indims=InDims("Time"), outdims=OutDims(; outtype=UInt8, path=outpath, fill_value=255, overwrite, kwargs...))
 end
 
 @testitem "rqatrend cube" begin
@@ -52,8 +52,13 @@ Compute the RQA trend metric for the non-missing time steps of xin, and save it 
 `lowerbound` and `upperbound` are the bounds of the classification into UInt8.
 The result of rqatrend are UInt8 values between 0 (no change) to 254 (definitive change) with 255 as sentinel value for missing data.
 """
-function rqatrend(pix_trend, pix, thresh=2, lowerbound=-5., upperbound=-0.5)
-    pix_trend .= classify_rqatrend(rqatrend_impl(pix; thresh); lowerbound, upperbound)
+function rqatrend(pix_trend, pix, thresh=2, lowerbound=-5., upperbound=-0.5; classify=true)
+    rqaval = rqatrend_impl(pix; thresh)
+    if classify
+        pix_trend .= classify_rqatrend(rqaval; lowerbound, upperbound)
+    else
+        pix_trend .= rqaval
+    end
 end
 
 """
