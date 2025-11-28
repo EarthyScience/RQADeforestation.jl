@@ -29,6 +29,13 @@
     @test size(a) == (50, 74)
     @test minimum(a) == 0 
     @test maximum(a) > 200
+
+    rqain = cat(a,a, dims=Dim{:Orbits}([1,2]))
+    clustered = similar(a)
+    RQADeforestation.postprocess(rqain, clustered, a .> 0)
+    @test size(clustered) == (50, 74)
+    @test unique(clustered) == [0,1]
+    @test clustered[end,end] == 1
 end
 
 @testitem "testdata julia_main" begin
