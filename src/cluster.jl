@@ -6,7 +6,7 @@ using Statistics
 using FillArrays
 #maskfolder = "data/forestcompressed"
 
-function meanvote(orbits, significance_thresh=-1.28)
+function meanvote(orbits, significance_thresh=50)
     s, n = 0.0, 0
     for i in eachindex(orbits)
         if orbits[i] != 0 && !isnan(orbits[i])
@@ -15,9 +15,18 @@ function meanvote(orbits, significance_thresh=-1.28)
         end
     end
     m = s / n
-    return m < significance_thresh ? 1 : 0
+    return m > significance_thresh ? 1 : 0
 end
 
+@testitem "meanvote" begin
+    using RQADeforestation: meanvote
+    orbits = [20,40,200, NaN]
+    mv = meanvote(orbits)
+    @test mv == 1
+    orbits2 = [60,60,50]
+    @test meanvote(orbits2) == 1
+    @test meanvote([40,40,NaN]) == 0
+end
 function filtersmallcomps!(
     xout, xin_unfiltered, forestmask, comborbits, connsize; dims=:, threaded=false
 )
