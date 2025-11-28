@@ -179,7 +179,9 @@ Compute the percentile range for the non-missing time steps of xin, and save it 
 These have to be between 0 and 1. 
 """
 function prange(xout, xin, lowpercentile=0.02, upperpercentile=0.98)
-    lowerlim, upperlim = quantile(xin, [lowpercentile, upperpercentile])
+    xinfiltered = filter(!ismissing, xin)
+    filter!(!isnan, xinfiltered)
+    lowerlim, upperlim = quantile(xinfiltered, [lowpercentile, upperpercentile])
     xout .= upperlim - lowerlim
 end
 
