@@ -9,7 +9,7 @@ using FillArrays
 function meanvote(orbits, significance_thresh=50)
     s, n = 0.0, 0
     for i in eachindex(orbits)
-        if orbits[i] != 0 && !isnan(orbits[i])
+        if !ismissing(orbits[i]) && orbits[i] != 0 && !isnan(orbits[i])
             s += orbits[i]
             n += 1
         end
@@ -31,7 +31,7 @@ function filtersmallcomps!(
     xout, xin_unfiltered, forestmask, comborbits, connsize; dims=:, threaded=false
 )
     xin = broadcast(xin_unfiltered, forestmask) do x, m
-        ismissing(m) ? zero(x) : x * m
+        ismissing(m) ? zero(x) : x * (m == 1)
     end
     x = similar(Array{Float64}, (axes(xin, 1), axes(xin, 2), Base.OneTo(1)))
     for j in axes(x, 2), i in axes(x, 1)
